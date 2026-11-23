@@ -1,49 +1,73 @@
 import { createMemo } from "solid-js";
-import { type SetStoreFunction } from "solid-js/store";
+import type { SetStoreFunction } from "solid-js/store";
 import { safeRevokeBlobUrl } from "../../blob-utils";
 import type { AppState, ExtractedImage, UploadedBookFile } from "../../types";
 import { parseBookFile, removeBookFileFromEngine } from "../../wasm-bridge";
 import { flashStepSpinner } from "./ui.slice";
 
+function matchesDiscardedImage(src: string, discarded: ExtractedImage[]): boolean {
+  if (!src) return false;
+  for (const img of discarded) {
+    if (img.url && src === img.url) {
+      return true;
+    }
+    if (img.name) {
+      if (
+        src === img.name ||
+        src.endsWith(`/${img.name}`) ||
+        src.endsWith(`\\${img.name}`) ||
+        src.includes(`/${img.name}?`) ||
+        src.includes(`/${img.name}#`)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 export function filterDiscardedImages(html: string, images: ExtractedImage[]): string {
   if (!html || !images || images.length === 0) return html;
   const discarded = images.filter((img) => img.isDiscarded);
   if (discarded.length === 0) return html;
+  if (typeof DOMParser === "undefined") return html;
 
-  let result = html;
-  for (const img of discarded) {
-    const patterns: string[] = [];
-    if (img.url) {
-      patterns.push(img.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const imgElements = Array.from(doc.body.querySelectorAll("img"));
+  if (imgElements.length === 0) return html;
+
+  let mutated = false;
+  for (const imgEl of imgElements) {
+    const src = imgEl.getAttribute("src") || "";
+    if (!matchesDiscardedImage(src, discarded)) {
+      continue;
     }
-    if (img.name) {
-      const escName = img.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      patterns.push(`[^"']*(?:^|[\\/])${escName}(?:[?#][^"']*)?`);
+
+    const wrapper = imgEl.closest("div.full-illustration-wrap, div.inline-image, figure");
+    if (wrapper && doc.body.contains(wrapper)) {
+      wrapper.remove();
+      mutated = true;
+      continue;
     }
 
-    for (const pat of patterns) {
-      const srcAttr = `src=["']${pat}["']`;
-
-      const wrapRegex = new RegExp(
-        `<div[^>]*class=["'][^"']*(?:full-illustration-wrap|inline-image)[^"']*["'][^>]*>[\\s\\S]*?<img[^>]*${srcAttr}[^>]*>[\\s\\S]*?<\\/div>`,
-        "gi"
-      );
-      result = result.replace(wrapRegex, "");
-
-      const figRegex = new RegExp(
-        `<figure[^>]*>[\\s\\S]*?<img[^>]*${srcAttr}[^>]*>[\\s\\S]*?<\\/figure>`,
-        "gi"
-      );
-      result = result.replace(figRegex, "");
-
-      const pRegex = new RegExp(`<p[^>]*>\\s*<img[^>]*${srcAttr}[^>]*>\\s*<\\/p>`, "gi");
-      result = result.replace(pRegex, "");
-
-      const imgRegex = new RegExp(`<img[^>]*${srcAttr}[^>]*>`, "gi");
-      result = result.replace(imgRegex, "");
+    const parent = imgEl.parentElement;
+    if (
+      parent &&
+      parent.tagName === "P" &&
+      parent.querySelectorAll("img").length === 1 &&
+      !(parent.textContent || "").trim()
+    ) {
+      parent.remove();
+      mutated = true;
+      continue;
     }
+
+    imgEl.remove();
+    mutated = true;
   }
-  return result;
+
+  return mutated ? doc.body.innerHTML : html;
 }
 
 export function createFilesSlice(
@@ -95,7 +119,10 @@ export function createFilesSlice(
         const isPdf = f.name.toLowerCase().endsWith(".pdf") || f.type.includes("pdf");
         const blobUrl = isPdf ? URL.createObjectURL(f) : undefined;
         setState("files", (item) => item.id === upFile.id, "progress", 50);
-        const payload = await parseBookFile(f);
+        const payload = await parseBookFile(f, {
+          language: "auto",
+          presetId: state.selectedPreset,
+        });
         setState("files", (item) => item.id === upFile.id, "progress", 90);
 
         setState("files", (item) => item.id === upFile.id, {
@@ -108,7 +135,9 @@ export function createFilesSlice(
 
         setState("sectionGroups", (prev) => [...prev, ...payload.groups]);
         setState("images", (prev) => [...prev, ...payload.images]);
-        const detectedCover = payload.images.find((img) => img.type === "cover" && !img.isDiscarded);
+        const detectedCover = payload.images.find(
+          (img) => img.type === "cover" && !img.isDiscarded
+        );
         setState("metadata", (prev) => ({
           ...prev,
           title: userEditedMetadata.has("title")

@@ -1,16 +1,4 @@
-import initWasm, {
-  apply_editorial_transforms_wasm,
-  audit_dynamic_paragraphs_wasm,
-  audit_spelling_wasm,
-  build_epub_wasm,
-  clear_custom_cover_wasm,
-  get_image_bytes_wasm,
-  init_engine,
-  parse_book_file_wasm,
-  remove_book_file_wasm,
-  set_custom_cover_wasm,
-} from "~/wasm/engine";
-import wasmUrl from "~/wasm/engine_bg.wasm?url";
+import * as Comlink from "comlink";
 import type {
   BookMetadata,
   DynamicAuditRequest,
@@ -18,39 +6,29 @@ import type {
   ExtractedImage,
   FileSectionGroup,
   GlossaryReplacement,
+  OcrPageInput,
+  ParseOptions,
   RegexRule,
   SpellAuditOptions,
   SpellCorrectionItem,
 } from "./types";
+import type {
+  BuildEpubWorkerPayload,
+  EditNovelWorkerApi,
+  ParsedBookPayload,
+  SpellAuditWorkerResult,
+  TransformSectionRequest,
+  TransformSectionResult,
+} from "./worker-contract";
 
-export interface ParsedBookPayload {
-  metadata: BookMetadata;
-  groups: FileSectionGroup[];
-  images: ExtractedImage[];
-  detectedRules: EditorialRule[];
-  spellCorrections: SpellCorrectionItem[];
-  ignoredJapaneseCount: number;
-  ignoredForeignCount: number;
-  ignoredProperNounsCount: number;
-}
-
-let wasmReady = false;
-let wasmInitPromise: Promise<void> | null = null;
-
-export async function ensureWasmInitialized(): Promise<void> {
-  if (wasmReady) return;
-  if (!wasmInitPromise) {
-    wasmInitPromise = initWasm(wasmUrl).then(() => {
-      init_engine();
-      wasmReady = true;
-    });
-  }
-  await wasmInitPromise;
-}
-
-if (typeof window !== "undefined") {
-  void ensureWasmInitialized();
-}
+export type {
+  BuildEpubWorkerPayload,
+  EditNovelWorkerApi,
+  ParsedBookPayload,
+  SpellAuditWorkerResult,
+  TransformSectionRequest,
+  TransformSectionResult,
+};
 
 function getImageMimeType(filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase();
@@ -61,13 +39,9 @@ function getImageMimeType(filename: string): string {
 }
 
 let workerInstance: Worker | null = null;
-let reqCounter = 0;
-const pendingRequests = new Map<
-  number,
-  { resolve: (val: any) => void; reject: (err: any) => void }
->();
+let workerApiProxy: Comlink.Remote<EditNovelWorkerApi> | null = null;
 
-function getWorker(): Worker | null {
+function getWorkerApi(): Comlink.Remote<EditNovelWorkerApi> | null {
   if (typeof window === "undefined" || typeof Worker === "undefined") {
     return null;
   }
@@ -75,102 +49,98 @@ function getWorker(): Worker | null {
     workerInstance = new Worker(new URL("./wasm-worker.ts", import.meta.url), {
       type: "module",
     });
-    workerInstance.onmessage = (e: MessageEvent) => {
-      const { id, type, result, error } = e.data;
-      const handler = pendingRequests.get(id);
-      if (!handler) return;
-      pendingRequests.delete(id);
-      if (type === "error" || error) {
-        handler.reject(new Error(error || "Worker error"));
-      } else {
-        handler.resolve(result);
-      }
-    };
     workerInstance.onerror = (e) => {
       console.warn("WASM Worker error:", e);
     };
+    workerApiProxy = Comlink.wrap<EditNovelWorkerApi>(workerInstance);
   }
-  return workerInstance;
+  return workerApiProxy;
 }
 
-function sendToWorker<T>(type: string, payload: any, transfer: Transferable[] = []): Promise<T> {
-  const worker = getWorker();
-  if (!worker) {
-    return Promise.reject(new Error("Worker not supported"));
+function requireWorkerApi(): Comlink.Remote<EditNovelWorkerApi> {
+  const api = getWorkerApi();
+  if (!api) {
+    throw new Error("Web Worker is not available in this environment");
   }
-  return new Promise<T>((resolve, reject) => {
-    const id = ++reqCounter;
-    pendingRequests.set(id, { resolve, reject });
-    worker.postMessage({ id, type, payload }, transfer);
-  });
+  return api;
 }
 
-export async function parseBookFile(file: File): Promise<ParsedBookPayload> {
+function replaceImageSourcesInHtml(html: string, imageUrlMap: Map<string, string>): string {
+  if (!html || imageUrlMap.size === 0) return html;
+  if (typeof DOMParser === "undefined") {
+    let fallback = html;
+    for (const [key, url] of imageUrlMap.entries()) {
+      fallback = fallback.split(key).join(url);
+    }
+    return fallback;
+  }
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const imgs = Array.from(doc.body.querySelectorAll("img"));
+  if (imgs.length === 0) return html;
+  let mutated = false;
+  for (const img of imgs) {
+    const src = img.getAttribute("src");
+    if (src && imageUrlMap.has(src)) {
+      img.setAttribute("src", imageUrlMap.get(src) || src);
+      mutated = true;
+    }
+  }
+  return mutated ? doc.body.innerHTML : html;
+}
+
+export async function warmupWasmWorker(): Promise<{ parallel: boolean }> {
+  const api = getWorkerApi();
+  if (!api) return { parallel: false };
+  try {
+    return await api.warmup();
+  } catch {
+    return { parallel: false };
+  }
+}
+
+export const warmup = warmupWasmWorker;
+
+export async function initDictionaryInEngine(
+  lang: "es" | "en" | "ja",
+  bytes: Uint8Array
+): Promise<void> {
+  const api = getWorkerApi();
+  if (!api) return;
+  const copy = new Uint8Array(bytes);
+  await api.initDictionary(lang, Comlink.transfer(copy, [copy.buffer]));
+}
+
+export const initDictionary = initDictionaryInEngine;
+
+export async function parseBookFile(
+  file: File,
+  options?: ParseOptions
+): Promise<ParsedBookPayload> {
+  const api = requireWorkerApi();
   const arrayBuffer = await file.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
 
-  const worker = getWorker();
-  if (worker) {
-    try {
-      const res = await sendToWorker<{
-        payload: ParsedBookPayload;
-        imagesData: Array<{ name: string; bytes: Uint8Array }>;
-      }>("parse_book", { fileName: file.name, fileBytes: bytes }, [bytes.buffer]);
+  const res = await api.parseBookFile(file.name, Comlink.transfer(bytes, [bytes.buffer]), options);
 
-      const payload = res.payload;
-      const imageUrlMap = new Map<string, string>();
-      for (const img of res.imagesData) {
-        const blob = new Blob([img.bytes as unknown as BlobPart], { type: getImageMimeType(img.name) });
-        const blobUrl = URL.createObjectURL(blob);
-        const targetImg = payload.images.find((i) => i.name === img.name);
-        if (targetImg) {
-          targetImg.url = blobUrl;
-        }
-        imageUrlMap.set(`../Images/${img.name}`, blobUrl);
-      }
-
-      if (imageUrlMap.size > 0) {
-        const pattern = Array.from(imageUrlMap.keys())
-          .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-          .join("|");
-        const regex = new RegExp(pattern, "g");
-        for (const group of payload.groups) {
-          for (const sec of group.sections) {
-            sec.htmlContent = sec.htmlContent.replace(regex, (m) => imageUrlMap.get(m) || m);
-          }
-        }
-      }
-
-      return payload;
-    } catch (err) {
-      console.warn("Worker parsing failed, executing on main thread:", err);
-    }
-  }
-
-  await ensureWasmInitialized();
-  const rawJson = parse_book_file_wasm(bytes, file.name);
-  const payload = JSON.parse(rawJson) as ParsedBookPayload;
-
+  const payload = res.payload;
   const imageUrlMap = new Map<string, string>();
-  for (const img of payload.images) {
-    const imgBytes = get_image_bytes_wasm(file.name, img.name);
-    if (imgBytes) {
-      const copy = new Uint8Array(imgBytes);
-      const blob = new Blob([copy], { type: getImageMimeType(img.name) });
-      const blobUrl = URL.createObjectURL(blob);
-      img.url = blobUrl;
-      imageUrlMap.set(`../Images/${img.name}`, blobUrl);
+  for (const img of res.imagesData) {
+    const copy = new Uint8Array(img.bytes.byteLength);
+    copy.set(img.bytes);
+    const blob = new Blob([copy.buffer], { type: getImageMimeType(img.name) });
+    const blobUrl = URL.createObjectURL(blob);
+    const targetImg = payload.images.find((i) => i.name === img.name);
+    if (targetImg) {
+      targetImg.url = blobUrl;
     }
+    imageUrlMap.set(`../Images/${img.name}`, blobUrl);
   }
 
   if (imageUrlMap.size > 0) {
-    const pattern = Array.from(imageUrlMap.keys())
-      .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .join("|");
-    const regex = new RegExp(pattern, "g");
     for (const group of payload.groups) {
       for (const sec of group.sections) {
-        sec.htmlContent = sec.htmlContent.replace(regex, (m) => imageUrlMap.get(m) || m);
+        sec.htmlContent = replaceImageSourcesInHtml(sec.htmlContent, imageUrlMap);
       }
     }
   }
@@ -178,35 +148,30 @@ export async function parseBookFile(file: File): Promise<ParsedBookPayload> {
   return payload;
 }
 
+export async function injectOcrPagesInEngine(
+  fileId: string,
+  pages: OcrPageInput[],
+  options?: ParseOptions
+): Promise<ParsedBookPayload> {
+  const api = requireWorkerApi();
+  return api.injectOcrPages(fileId, pages, options);
+}
+
+export const injectOcrPages = injectOcrPagesInEngine;
+
 export function removeBookFileFromEngine(fileName: string): void {
-  const worker = getWorker();
-  if (worker) {
-    void sendToWorker("remove_book", { fileName });
-  }
-  if (wasmReady) {
-    remove_book_file_wasm(fileName);
+  const api = getWorkerApi();
+  if (api) {
+    void api.removeBookFile(fileName);
   }
 }
 
 export async function auditSpellingInEngine(
   fileId: string,
   options: SpellAuditOptions
-): Promise<{
-  corrections: SpellCorrectionItem[];
-  ignoredJapaneseCount: number;
-  ignoredForeignCount: number;
-  ignoredProperNounsCount: number;
-}> {
-  const worker = getWorker();
-  if (worker) {
-    try {
-      return await sendToWorker("audit_spelling", {
-        fileId,
-        optionsJson: JSON.stringify(options),
-      });
-    } catch {}
-  }
-  if (!wasmReady) {
+): Promise<SpellAuditWorkerResult> {
+  const api = getWorkerApi();
+  if (!api) {
     return {
       corrections: [],
       ignoredJapaneseCount: 0,
@@ -214,89 +179,106 @@ export async function auditSpellingInEngine(
       ignoredProperNounsCount: 0,
     };
   }
-  const raw = audit_spelling_wasm(fileId, JSON.stringify(options));
-  return JSON.parse(raw);
+  try {
+    return await api.auditSpelling(fileId, options);
+  } catch {
+    return {
+      corrections: [],
+      ignoredJapaneseCount: 0,
+      ignoredForeignCount: 0,
+      ignoredProperNounsCount: 0,
+    };
+  }
 }
 
 export async function auditDynamicParagraphsInEngine(
   request: DynamicAuditRequest
 ): Promise<SpellCorrectionItem[]> {
-  const worker = getWorker();
-  if (worker) {
-    try {
-      return await sendToWorker<SpellCorrectionItem[]>("audit_dynamic_paragraphs", {
-        requestJson: JSON.stringify(request),
-      });
-    } catch {}
-  }
-  if (!wasmReady) {
+  const api = getWorkerApi();
+  if (!api) return [];
+  try {
+    return await api.auditDynamicParagraphs(request);
+  } catch {
     return [];
   }
-  const raw = audit_dynamic_paragraphs_wasm(JSON.stringify(request));
-  return JSON.parse(raw);
 }
 
-export function applyEditorialTransforms(
-  content: string,
-  editorialRules: EditorialRule[],
-  regexRules: RegexRule[],
-  glossary: GlossaryReplacement[]
-): string {
-  if (!wasmReady || !content) return content;
-  return apply_editorial_transforms_wasm(
-    content,
-    JSON.stringify(editorialRules),
-    JSON.stringify(regexRules),
-    JSON.stringify(glossary)
-  );
+export async function transformSectionInEngine(
+  request: TransformSectionRequest
+): Promise<TransformSectionResult> {
+  const api = getWorkerApi();
+  if (!api || !request.html) {
+    return {
+      requestId: request.requestId,
+      sectionId: request.sectionId,
+      html: request.html,
+      rulesSignature: "",
+    };
+  }
+  return api.transformSection(request);
 }
+
+export const transformSection = transformSectionInEngine;
 
 export async function setCustomCoverBridge(
   filename: string,
   ext: string,
   data: Uint8Array
 ): Promise<void> {
-  const worker = getWorker();
-  if (worker) {
-    void sendToWorker("set_custom_cover", { filename, ext, data });
-  }
-  await ensureWasmInitialized();
-  set_custom_cover_wasm(filename, ext, data);
+  const api = getWorkerApi();
+  if (!api) return;
+  const copy = new Uint8Array(data);
+  await api.setCustomCover(filename, ext, Comlink.transfer(copy, [copy.buffer]));
 }
 
 export async function clearCustomCoverBridge(): Promise<void> {
-  const worker = getWorker();
-  if (worker) {
-    void sendToWorker("clear_custom_cover", {});
-  }
-  await ensureWasmInitialized();
-  clear_custom_cover_wasm();
+  const api = getWorkerApi();
+  if (!api) return;
+  await api.clearCustomCover();
 }
 
-function convertNoterefSpansToLinks(html: string): string {
-  return html.replace(
-    /<span([^>]*class=["'][^"']*noteref[^"']*["'][^>]*)>([\s\S]*?)<\/span>/gi,
-    (full, attrs, inner) => {
-      let fnNum = "";
-      const fnMatch = attrs.match(/data-fn-id=["']fn-(\d+)["']/i);
-      if (fnMatch) {
-        fnNum = fnMatch[1];
+export function convertNoterefSpansToLinks(html: string): string {
+  if (!html || typeof DOMParser === "undefined") return html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const spans = Array.from(doc.body.querySelectorAll("span.noteref"));
+  if (spans.length === 0) return html;
+
+  for (const span of spans) {
+    let fnNum = "";
+    const dataFnId = span.getAttribute("data-fn-id") || "";
+    const fnMatch = dataFnId.match(/^fn-(\d+)$/i);
+    if (fnMatch) {
+      fnNum = fnMatch[1];
+    } else {
+      const idAttr = span.getAttribute("id") || "";
+      const refMatch = idAttr.match(/^fnref-(\d+)$/i);
+      if (refMatch) {
+        fnNum = refMatch[1];
       } else {
-        const refMatch = attrs.match(/id=["']fnref-(\d+)["']/i);
-        if (refMatch) {
-          fnNum = refMatch[1];
-        } else {
-          const numMatch = inner.match(/\[(\d+)\]/);
-          if (numMatch) fnNum = numMatch[1];
+        const text = span.textContent || "";
+        const numMatch = text.match(/\[(\d+)\]/);
+        if (numMatch) {
+          fnNum = numMatch[1];
         }
       }
-
-      if (fnNum) {
-        return `<a href="#fn-${fnNum}" id="fnref-${fnNum}" class="noteref" epub:type="noteref" role="doc-noteref">${inner}</a>`;
-      }
-      return full;
     }
-  );
+
+    if (fnNum) {
+      const anchor = doc.createElement("a");
+      anchor.setAttribute("href", `#fn-${fnNum}`);
+      anchor.setAttribute("id", `fnref-${fnNum}`);
+      anchor.setAttribute("class", "noteref");
+      anchor.setAttribute("epub:type", "noteref");
+      anchor.setAttribute("role", "doc-noteref");
+      while (span.firstChild) {
+        anchor.appendChild(span.firstChild);
+      }
+      span.replaceWith(anchor);
+    }
+  }
+
+  return doc.body.innerHTML;
 }
 
 export async function buildEpubFromEngine(
@@ -310,6 +292,7 @@ export async function buildEpubFromEngine(
   globalSpellEnabled?: boolean,
   volumeSpellSettings?: Record<string, boolean>
 ): Promise<Blob> {
+  const api = requireWorkerApi();
   const exportGroups = groups.map((g) => ({
     ...g,
     sections: g.sections.map((s) => ({
@@ -318,7 +301,7 @@ export async function buildEpubFromEngine(
     })),
   }));
 
-  const payloadJson = JSON.stringify({
+  const payload: BuildEpubWorkerPayload = {
     metadata,
     groups: exportGroups,
     images,
@@ -329,19 +312,42 @@ export async function buildEpubFromEngine(
     globalSpellEnabled,
     volumeSpellSettings,
     removeCover: metadata.hasCoverRemoved,
-  });
+  };
 
-  const worker = getWorker();
-  if (worker) {
-    try {
-      const epubBytes = await sendToWorker<Uint8Array>("build_epub", { payloadJson });
-      const copy = new Uint8Array(epubBytes);
-      return new Blob([copy], { type: "application/epub+zip" });
-    } catch {}
-  }
-
-  await ensureWasmInitialized();
-  const epubBytes = build_epub_wasm(payloadJson);
-  const copy = new Uint8Array(epubBytes);
-  return new Blob([copy], { type: "application/epub+zip" });
+  const epubBytes = await api.buildEpub(payload);
+  const copy = new Uint8Array(epubBytes.byteLength);
+  copy.set(epubBytes);
+  return new Blob([copy.buffer], { type: "application/epub+zip" });
 }
+
+export async function compressBrotliInEngine(bytes: Uint8Array): Promise<Uint8Array> {
+  const api = requireWorkerApi();
+  const copy = new Uint8Array(bytes);
+  return api.compressBrotli(Comlink.transfer(copy, [copy.buffer]));
+}
+
+export const compressBrotli = compressBrotliInEngine;
+
+export async function decompressBrotliInEngine(bytes: Uint8Array): Promise<Uint8Array> {
+  const api = requireWorkerApi();
+  const copy = new Uint8Array(bytes);
+  return api.decompressBrotli(Comlink.transfer(copy, [copy.buffer]));
+}
+
+export const decompressBrotli = decompressBrotliInEngine;
+
+export const wasmBridge = {
+  warmup: warmupWasmWorker,
+  initDictionary: initDictionaryInEngine,
+  parseBookFile,
+  injectOcrPages: injectOcrPagesInEngine,
+  removeBookFile: removeBookFileFromEngine,
+  auditSpelling: auditSpellingInEngine,
+  auditDynamicParagraphs: auditDynamicParagraphsInEngine,
+  transformSection: transformSectionInEngine,
+  setCustomCover: setCustomCoverBridge,
+  clearCustomCover: clearCustomCoverBridge,
+  buildEpub: buildEpubFromEngine,
+  compressBrotli: compressBrotliInEngine,
+  decompressBrotli: decompressBrotliInEngine,
+};

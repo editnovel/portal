@@ -10,13 +10,14 @@ import {
 import {
   activeOriginalFileType,
   activePdfBlobUrl,
-  activeSection,
+  activeRawSection,
   projectVersion,
   registerAutoSaveCanceller,
   setReaderSettingsOpen,
   setSaveExportOpen,
   state,
 } from "~/lib/store";
+import { warmupWasmWorker } from "~/lib/wasm-bridge";
 import { ChapterSidebar } from "./ChapterSidebar";
 import { CorrectionPanel } from "./CorrectionPanel";
 import { EReaderPreview } from "./EReaderPreview";
@@ -53,6 +54,7 @@ export const Workspace: Component = () => {
   };
 
   onMount(() => {
+    void warmupWasmWorker();
     getSavedProjectMeta().then((meta) => {
       if (meta && state.files.length === 0) {
         setSavedMeta(meta);
@@ -230,7 +232,11 @@ export const Workspace: Component = () => {
               <Show when={restoringSession()}>
                 <Loader2 class="w-3 h-3 animate-spin" />
               </Show>
-              <span>{restoringSession() ? t("workspace.restoringSession") : t("workspace.restoreSession")}</span>
+              <span>
+                {restoringSession()
+                  ? t("workspace.restoringSession")
+                  : t("workspace.restoreSession")}
+              </span>
             </button>
             <button
               type="button"
@@ -298,7 +304,7 @@ export const Workspace: Component = () => {
                     pdfUrl={activePdfBlobUrl()}
                     scrollFraction={readerScrollFraction()}
                     onScrollFraction={handleReaderScroll}
-                    targetPage={activeSection()?.startPage}
+                    targetPage={activeRawSection()?.startPage}
                     openSearchTrigger={openOriginalSearchTrigger}
                   />
                 }
@@ -321,10 +327,7 @@ export const Workspace: Component = () => {
         onClose={() => setReaderSettingsOpen(false)}
       />
 
-      <SaveExportPanel
-        isOpen={state.saveExportOpen}
-        onClose={() => setSaveExportOpen(false)}
-      />
+      <SaveExportPanel isOpen={state.saveExportOpen} onClose={() => setSaveExportOpen(false)} />
     </div>
   );
 };

@@ -1,8 +1,4 @@
-import {
-  BookOpen,
-  Search,
-  SpellCheck2,
-} from "lucide-solid";
+import { BookOpen, Search } from "lucide-solid";
 import {
   type Component,
   createEffect,
@@ -10,18 +6,107 @@ import {
   createSignal,
   onCleanup,
   onMount,
-  Show,
 } from "solid-js";
+import { SearchBar } from "~/components/ui/SearchBar";
 import { t } from "~/lib/i18n";
 import { readerSettingsToCssVariables } from "~/lib/reader-settings";
-import { activeSection, setRightPaneMode, state } from "~/lib/store";
+import { activeRawSection, activeSection, filterDiscardedImages, state } from "~/lib/store";
 import { RightPaneSwitcher } from "./RightPaneSwitcher";
-import { SearchBar } from "~/components/ui/SearchBar";
 
 interface EReaderPreviewProps {
   onScrollFraction?: (fraction: number) => void;
   scrollFraction?: number;
   openSearchTrigger?: () => number;
+}
+
+function getCleanElementSignature(el: Element): string {
+  if (!el.querySelector("mark.reader-search-match")) {
+    return el.outerHTML;
+  }
+  const clone = el.cloneNode(true) as Element;
+  const marks = Array.from(clone.querySelectorAll("mark.reader-search-match"));
+  for (const mark of marks) {
+    const parent = mark.parentNode;
+    if (parent) {
+      while (mark.firstChild) {
+        parent.insertBefore(mark.firstChild, mark);
+      }
+      parent.removeChild(mark);
+      parent.normalize();
+    }
+  }
+  return clone.outerHTML;
+}
+
+function patchContainerBlocks(
+  container: HTMLElement,
+  nextHtml: string,
+  ownerDoc: Document
+): boolean {
+  const parser = new DOMParser();
+  const parsedDoc = parser.parseFromString(nextHtml, "text/html");
+  const nextChildren = Array.from(parsedDoc.body.children);
+
+  if (nextChildren.length === 0) {
+    const nextText = parsedDoc.body.textContent || "";
+    if (container.textContent !== nextText) {
+      container.replaceChildren(ownerDoc.createTextNode(nextText));
+      return true;
+    }
+    return false;
+  }
+
+  for (const node of Array.from(container.childNodes)) {
+    if (node.nodeType === Node.TEXT_NODE && !(node.textContent || "").trim()) {
+      container.removeChild(node);
+    }
+  }
+
+  let mutated = false;
+
+  for (let i = 0; i < nextChildren.length; i++) {
+    const nextEl = nextChildren[i];
+    const nextSig = nextEl.outerHTML;
+    const currEl = container.children[i];
+
+    if (!currEl) {
+      container.appendChild(ownerDoc.importNode(nextEl, true));
+      mutated = true;
+      continue;
+    }
+
+    if (getCleanElementSignature(currEl) === nextSig) {
+      continue;
+    }
+
+    const nextCurrEl = container.children[i + 1];
+    if (nextCurrEl && getCleanElementSignature(nextCurrEl) === nextSig) {
+      container.removeChild(currEl);
+      mutated = true;
+      continue;
+    }
+
+    const lookaheadNextEl = nextChildren[i + 1];
+    if (lookaheadNextEl && getCleanElementSignature(currEl) === lookaheadNextEl.outerHTML) {
+      container.insertBefore(ownerDoc.importNode(nextEl, true), currEl);
+      mutated = true;
+      continue;
+    }
+
+    container.replaceChild(ownerDoc.importNode(nextEl, true), currEl);
+    mutated = true;
+  }
+
+  while (container.children.length > nextChildren.length) {
+    if (container.lastElementChild) {
+      container.removeChild(container.lastElementChild);
+      mutated = true;
+    } else {
+      break;
+    }
+  }
+
+  return mutated;
 }
 
 export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
@@ -40,8 +125,12 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
   let matchElements: HTMLElement[] = [];
 
   const wordCount = createMemo(() => {
-    const content = activeSection()?.htmlContent || "";
-    const clean = content.replace(/<[^>]*>/g, " ").trim();
+    const content = activeRawSection()?.htmlContent || "";
+    if (!content) return 0;
+    const clean =
+      typeof DOMParser !== "undefined"
+        ? (new DOMParser().parseFromString(content, "text/html").body.textContent || "").trim()
+        : content.replace(/<[^>]*>/g, " ").trim();
     if (!clean) return 0;
     return clean.split(/\s+/).length;
   });
@@ -80,6 +169,16 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
       <p style="font-size: 0.85em;">${state.isProcessing ? t("editor.extractingChaptersReader") : t("reader.noChapterLoadedDesc")}</p>
     </div>
   `;
+
+  const resolvedSectionHtml = createMemo(() => {
+    const raw = activeRawSection();
+    const sec = activeSection();
+    if (!raw) return getFallbackContent();
+    if (sec && sec.id === raw.id && sec.htmlContent) {
+      return sec.htmlContent;
+    }
+    return filterDiscardedImages(raw.htmlContent, state.images) || getFallbackContent();
+  });
 
   const generateInitialHtml = (initialContent: string) => {
     const themeAttr = `data-theme="${getEffectiveTheme()}"`;
@@ -148,9 +247,17 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
           if (card) {
             const bodyEl = card.querySelector('.footnote-card-body') || card;
             const tagEl = card.querySelector('.footnote-card-tag');
-            const tagHtml = tagEl ? '<div class="tooltip-tag">' + (tagEl.textContent ? tagEl.textContent.trim() : '') + '</div>' : '';
-            const bodyHtml = '<div>' + (bodyEl.textContent ? bodyEl.textContent.trim() : '') + '</div>';
-            tooltipEl.innerHTML = tagHtml + bodyHtml;
+            const nodes = [];
+            if (tagEl) {
+              const tagDiv = document.createElement('div');
+              tagDiv.className = 'tooltip-tag';
+              tagDiv.textContent = tagEl.textContent ? tagEl.textContent.trim() : '';
+              nodes.push(tagDiv);
+            }
+            const bodyDiv = document.createElement('div');
+            bodyDiv.textContent = bodyEl.textContent ? bodyEl.textContent.trim() : '';
+            nodes.push(bodyDiv);
+            tooltipEl.replaceChildren(...nodes);
 
             const rect = noteref.getBoundingClientRect();
             const showAbove = rect.bottom + 120 > window.innerHeight;
@@ -186,6 +293,32 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
       }
     });
 
+    function patchIframeBlocks(container, nextHtml) {
+      const parsed = new DOMParser().parseFromString(nextHtml, 'text/html');
+      const nextChildren = Array.from(parsed.body.children);
+      if (nextChildren.length === 0) {
+        container.replaceChildren(document.createTextNode(parsed.body.textContent || ''));
+        return;
+      }
+      for (const node of Array.from(container.childNodes)) {
+        if (node.nodeType === Node.TEXT_NODE && !(node.textContent || '').trim()) {
+          container.removeChild(node);
+        }
+      }
+      for (let i = 0; i < nextChildren.length; i++) {
+        const nextEl = nextChildren[i];
+        const currEl = container.children[i];
+        if (!currEl) {
+          container.appendChild(document.importNode(nextEl, true));
+        } else if (currEl.outerHTML !== nextEl.outerHTML) {
+          container.replaceChild(document.importNode(nextEl, true), currEl);
+        }
+      }
+      while (container.children.length > nextChildren.length) {
+        container.removeChild(container.lastElementChild);
+      }
+    }
+
     window.addEventListener('message', (event) => {
       if (event.data?.type === 'SYNC_SCROLL_TO' && typeof event.data.fraction === 'number') {
         const total = document.documentElement.scrollHeight - window.innerHeight;
@@ -199,8 +332,8 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
         }
       } else if (event.data?.type === 'UPDATE_CONTENT' && typeof event.data.html === 'string') {
         const el = document.getElementById('novel-content');
-        if (el && el.innerHTML !== event.data.html) {
-          el.innerHTML = event.data.html;
+        if (el) {
+          patchIframeBlocks(el, event.data.html);
         }
         if (event.data.resetScroll) {
           window.scrollTo({ top: 0, behavior: 'auto' });
@@ -244,11 +377,23 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
       if (doc) {
         const el = doc.getElementById("novel-content");
         if (el) {
-          if (el.innerHTML !== html) {
-            el.innerHTML = html;
-          }
-          if (resetScroll && iframeRef?.contentWindow) {
-            iframeRef.contentWindow.scrollTo({ top: 0, behavior: "auto" });
+          if (resetScroll) {
+            const parsedDoc = new DOMParser().parseFromString(html, "text/html");
+            const imported = Array.from(parsedDoc.body.children).map((child) =>
+              doc.importNode(child, true)
+            );
+            el.replaceChildren(...imported);
+            if (iframeRef?.contentWindow) {
+              iframeRef.contentWindow.scrollTo({ top: 0, behavior: "auto" });
+            }
+            if (isSearchOpen() && searchQuery().trim()) {
+              applyIframeSearch(searchQuery(), caseSensitive());
+            }
+          } else {
+            const mutated = patchContainerBlocks(el, html, doc);
+            if (mutated && isSearchOpen() && searchQuery().trim()) {
+              applyIframeSearch(searchQuery(), caseSensitive(), false);
+            }
           }
           return;
         }
@@ -291,7 +436,7 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
     window.addEventListener("message", messageHandler);
 
     if (iframeRef) {
-      const initialHtml = activeSection()?.htmlContent || getFallbackContent();
+      const initialHtml = resolvedSectionHtml();
       lastSectionId = state.activeSectionId;
       iframeRef.srcdoc = generateInitialHtml(initialHtml);
 
@@ -299,7 +444,7 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
         isIframeLoaded = true;
         applyTheme();
         applyStyles();
-        const content = activeSection()?.htmlContent || getFallbackContent();
+        const content = resolvedSectionHtml();
         applyContent(content, false);
       };
 
@@ -339,9 +484,8 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
 
   let previewUpdateTimer: number | null = null;
   createEffect(() => {
-    const sec = activeSection();
+    const content = resolvedSectionHtml();
     const currentId = state.activeSectionId;
-    const content = sec?.htmlContent || getFallbackContent();
 
     if (!isIframeLoaded) return;
 
@@ -361,7 +505,7 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
       previewUpdateTimer = window.setTimeout(() => {
         previewUpdateTimer = null;
         applyContent(content, false);
-      }, 500);
+      }, 150);
     }
   });
 
@@ -403,7 +547,7 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
     setCurrentMatchIndex(0);
   };
 
-  const applyIframeSearch = (query: string, caseSens: boolean) => {
+  const applyIframeSearch = (query: string, caseSens: boolean, scrollOnMatch = true) => {
     clearIframeMatches();
     const doc = iframeRef?.contentDocument;
     const trimmed = query.trim();
@@ -412,7 +556,7 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
     const article = doc.getElementById("novel-content") || doc.body;
     const treeWalker = doc.createTreeWalker(article, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
-        if (!node.textContent || !node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+        if (!node.textContent?.trim()) return NodeFilter.FILTER_REJECT;
         const parent = node.parentElement;
         if (
           parent &&
@@ -470,27 +614,30 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
     matchElements = foundMarks;
     setTotalMatches(foundMarks.length);
     if (foundMarks.length > 0) {
-      setCurrentMatchIndex(0);
-      highlightCurrentIframeMatch(0);
+      const targetIdx = Math.min(currentMatchIndex(), foundMarks.length - 1);
+      setCurrentMatchIndex(targetIdx);
+      highlightCurrentIframeMatch(targetIdx, scrollOnMatch);
     }
   };
 
-  const highlightCurrentIframeMatch = (idx: number) => {
+  const highlightCurrentIframeMatch = (idx: number, shouldScroll = true) => {
     matchElements.forEach((el, i) => {
       if (i === idx) {
         el.classList.add("reader-search-match-current");
-        try {
-          const win = iframeRef?.contentWindow;
-          if (win) {
-            const rect = el.getBoundingClientRect();
-            const winH = win.innerHeight;
-            const deltaY = rect.top + rect.height / 2 - winH / 2;
-            win.scrollBy({ top: deltaY, behavior: "smooth" });
-          } else {
+        if (shouldScroll) {
+          try {
+            const win = iframeRef?.contentWindow;
+            if (win) {
+              const rect = el.getBoundingClientRect();
+              const winH = win.innerHeight;
+              const deltaY = rect.top + rect.height / 2 - winH / 2;
+              win.scrollBy({ top: deltaY, behavior: "smooth" });
+            } else {
+              el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          } catch {
             el.scrollIntoView({ behavior: "smooth", block: "center" });
           }
-        } catch {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       } else {
         el.classList.remove("reader-search-match-current");
@@ -538,26 +685,6 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
     const next = !caseSensitive();
     setCaseSensitive(next);
     applyIframeSearch(searchQuery(), next);
-  };
-
-  const handleSearchKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (e.shiftKey) {
-        goToPrevMatch();
-      } else {
-        goToNextMatch();
-      }
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      goToNextMatch();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      goToPrevMatch();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      closeSearch();
-    }
   };
 
   createEffect(() => {
@@ -621,7 +748,9 @@ export const EReaderPreview: Component<EReaderPreviewProps> = (props) => {
       </div>
 
       <div class="h-8 border-t border-border bg-card px-4 flex items-center justify-between text-[11px] text-muted-foreground shrink-0">
-        <span class="truncate max-w-[280px]">{activeSection()?.title || state.metadata.title}</span>
+        <span class="truncate max-w-[280px]">
+          {activeRawSection()?.title || state.metadata.title}
+        </span>
         <div class="flex items-center gap-2 font-mono text-[11px]">
           <span>
             {wordCount()} {t("common.words")}

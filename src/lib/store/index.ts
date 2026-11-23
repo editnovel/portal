@@ -2,7 +2,7 @@ import { batch, createRoot } from "solid-js";
 import { createStore } from "solid-js/store";
 import { safeRevokeBlobUrl } from "../blob-utils";
 import { DEFAULT_READER_SETTINGS } from "../reader-settings";
-import type { AppState } from "../types";
+import type { AppState, ExtractedImage } from "../types";
 import {
   buildEpubFromEngine,
   clearCustomCoverBridge,
@@ -12,6 +12,7 @@ import { createFilesSlice, filterDiscardedImages } from "./slices/files.slice";
 import {
   createMetadataSlice,
   customCoverBlob,
+  getCustomCoverBlob,
   INITIAL_METADATA,
   setCustomCoverBlob,
   userEditedMetadata,
@@ -21,16 +22,24 @@ import {
   applyEllipsisUnification,
   applyQuotesUnification,
   createRulesSlice,
+  formatDialogueWithSymbol,
 } from "./slices/rules.slice";
 import { createSectionsSlice } from "./slices/sections.slice";
 import { createSpellSlice } from "./slices/spell.slice";
 import {
+  cancelPendingAutoSave,
+  correctionScrollTrigger,
   createUiSlice,
   getInitialLocalSaveEnabled,
+  projectVersion,
+  registerAutoSaveCanceller,
+  setCorrectionScrollTrigger,
+  touchProject,
 } from "./slices/ui.slice";
 import {
   createDefaultInitialGroup,
   DEFAULT_INITIAL_SECTION_ID,
+  DEFAULT_TEMPLATE_HTML,
   INITIAL_EDITORIAL_RULES,
   INITIAL_GLOSSARY,
   INITIAL_REGEX_RULES,
@@ -81,40 +90,89 @@ const [state, setState] = createStore<AppState>({
   spellIgnoredProperNounsCount: 0,
 });
 
-const {
-  uiSlice,
-  sectionsSlice,
-  metadataSlice,
-  filesSlice,
-  rulesSlice,
-  spellSlice,
-} = createRoot(() => {
-  const ui = createUiSlice(setState);
-  const sections = createSectionsSlice(state, setState);
-  const metadata = createMetadataSlice(state, setState);
-  const files = createFilesSlice(
-    state,
-    setState,
-    userEditedMetadata,
-    metadata.applyAutoMetadataSuggestions
-  );
-  const rules = createRulesSlice(state, setState);
-  const spell = createSpellSlice(
-    state,
-    setState,
-    sections.updateSectionHtml,
-    sections.setActiveSectionId,
-    ui.setSelectedCorrectionId
-  );
-  return {
-    uiSlice: ui,
-    sectionsSlice: sections,
-    metadataSlice: metadata,
-    filesSlice: files,
-    rulesSlice: rules,
-    spellSlice: spell,
-  };
-});
+const { uiSlice, sectionsSlice, metadataSlice, filesSlice, rulesSlice, spellSlice } = createRoot(
+  () => {
+    const ui = createUiSlice(setState);
+    const sections = createSectionsSlice(state, setState);
+    const metadata = createMetadataSlice(state, setState);
+    const files = createFilesSlice(
+      state,
+      setState,
+      userEditedMetadata,
+      metadata.applyAutoMetadataSuggestions
+    );
+    const rules = createRulesSlice(state, setState);
+    const spell = createSpellSlice(
+      state,
+      setState,
+      sections.updateSectionHtml,
+      sections.setActiveSectionId,
+      ui.setSelectedCorrectionId
+    );
+    return {
+      uiSlice: ui,
+      sectionsSlice: sections,
+      metadataSlice: metadata,
+      filesSlice: files,
+      rulesSlice: rules,
+      spellSlice: spell,
+    };
+  }
+);
+
+function finalizeSectionExportDom(
+  html: string,
+  unifyBreaks: boolean,
+  unifiedBreakSymbol: string,
+  images: ExtractedImage[]
+): string {
+  if (!html || typeof DOMParser === "undefined") return html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  let mutated = false;
+
+  if (unifyBreaks && unifiedBreakSymbol) {
+    const breakNodes = Array.from(doc.body.querySelectorAll("div.scene-break, [data-scene-break]"));
+    for (const brNode of breakNodes) {
+      brNode.className = "scene-break";
+      brNode.removeAttribute("data-symbol");
+      brNode.textContent = unifiedBreakSymbol;
+      mutated = true;
+    }
+  }
+
+  const spellSpans = Array.from(doc.body.querySelectorAll("span.spell-applied"));
+  for (const span of spellSpans) {
+    const parent = span.parentNode;
+    if (parent) {
+      while (span.firstChild) {
+        parent.insertBefore(span.firstChild, span);
+      }
+      parent.removeChild(span);
+      mutated = true;
+    }
+  }
+
+  const imageMap = new Map<string, string>();
+  for (const img of images) {
+    if (!img.isDiscarded && img.url) {
+      imageMap.set(img.url, `../Images/${img.name}`);
+    }
+  }
+
+  if (imageMap.size > 0) {
+    const imgNodes = Array.from(doc.body.querySelectorAll("img"));
+    for (const imgEl of imgNodes) {
+      const src = imgEl.getAttribute("src");
+      if (src && imageMap.has(src)) {
+        imgEl.setAttribute("src", imageMap.get(src) || src);
+        mutated = true;
+      }
+    }
+  }
+
+  return mutated ? doc.body.innerHTML : html;
+}
 
 export async function exportCurrentEpub(): Promise<void> {
   const activeGroups = state.sectionGroups.filter((g) => {
@@ -125,12 +183,6 @@ export async function exportCurrentEpub(): Promise<void> {
     ...g,
     sections: g.sections.map((s) => {
       let content = filterDiscardedImages(s.htmlContent, state.images);
-      if (state.unifyBreaks && state.unifiedBreakSymbol) {
-        content = content.replace(
-          /<div[^>]*class=["'][^"']*scene-break[^"']*["'][^>]*>.*?<\/div>/gi,
-          `<div class="scene-break">${state.unifiedBreakSymbol}</div>`
-        );
-      }
       if (state.unifyDialogue && state.unifiedDialogueSymbol) {
         content = applyDialogueUnification(content, state.unifiedDialogueSymbol);
       }
@@ -140,15 +192,12 @@ export async function exportCurrentEpub(): Promise<void> {
       if (state.unifyEllipsis && state.unifiedEllipsisSymbol) {
         content = applyEllipsisUnification(content, state.unifiedEllipsisSymbol);
       }
-      content = content.replace(
-        /<span[^>]*class=["'][^"']*spell-applied[^"']*["'][^>]*>(.*?)<\/span>/gi,
-        "$1"
+      content = finalizeSectionExportDom(
+        content,
+        state.unifyBreaks,
+        state.unifiedBreakSymbol,
+        state.images
       );
-      for (const img of state.images) {
-        if (!img.isDiscarded && img.url) {
-          content = content.split(img.url).join(`../Images/${img.name}`);
-        }
-      }
       return { ...s, htmlContent: content };
     }),
   }));
@@ -216,9 +265,8 @@ export function resetProject(): void {
   });
 }
 
-export { state, setState };
+export { setState, state };
 
-// Re-export UI Slice
 export const {
   setStep,
   setPreset,
@@ -239,15 +287,14 @@ export const {
 } = uiSlice;
 
 export {
-  projectVersion,
-  touchProject,
-  registerAutoSaveCanceller,
   cancelPendingAutoSave,
   correctionScrollTrigger,
+  projectVersion,
+  registerAutoSaveCanceller,
   setCorrectionScrollTrigger,
-} from "./slices/ui.slice";
+  touchProject,
+};
 
-// Re-export Sections Slice
 export const {
   setSectionGroups,
   toggleGroupCollapse,
@@ -268,7 +315,6 @@ export const {
   activeOriginalFileType,
 } = sectionsSlice;
 
-// Re-export Metadata Slice
 export const {
   updateMetadata,
   getDetectedCovers,
@@ -282,14 +328,8 @@ export const {
   restoreOriginalCoverImage,
 } = metadataSlice;
 
-export {
-  userEditedMetadata,
-  customCoverBlob,
-  setCustomCoverBlob,
-  getCustomCoverBlob,
-} from "./slices/metadata.slice";
+export { customCoverBlob, getCustomCoverBlob, setCustomCoverBlob, userEditedMetadata };
 
-// Re-export Files Slice
 export const {
   hasReadyFiles,
   addFiles,
@@ -302,9 +342,8 @@ export const {
   discardTinyImages,
 } = filesSlice;
 
-export { filterDiscardedImages } from "./slices/files.slice";
+export { filterDiscardedImages };
 
-// Re-export Rules Slice
 export const {
   toggleEditorialRule,
   toggleRegexRule,
@@ -328,13 +367,12 @@ export const {
 } = rulesSlice;
 
 export {
-  formatDialogueWithSymbol,
   applyDialogueUnification,
-  applyQuotesUnification,
   applyEllipsisUnification,
-} from "./slices/rules.slice";
+  applyQuotesUnification,
+  formatDialogueWithSymbol,
+};
 
-// Re-export Spell Slice
 export const {
   toggleGlobalSpell,
   toggleVolumeSpell,
@@ -357,10 +395,9 @@ export const {
 } = spellSlice;
 
 export {
+  createDefaultInitialGroup,
   DEFAULT_INITIAL_SECTION_ID,
   DEFAULT_TEMPLATE_HTML,
-  createDefaultInitialGroup,
   INITIAL_EDITORIAL_RULES,
-} from "./templates";
-
-export { INITIAL_METADATA } from "./slices/metadata.slice";
+  INITIAL_METADATA,
+};
