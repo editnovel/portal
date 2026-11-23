@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { safeRevokeBlobUrl } from "~/lib/blob-utils";
 import {
   AVAILABLE_FONTS,
@@ -16,7 +16,7 @@ import {
 describe("reader-settings utilities", () => {
   afterEach(() => {
     document.documentElement.classList.remove("dark", "light");
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   it("exposes default settings and available font options", () => {
@@ -71,11 +71,11 @@ describe("reader-settings utilities", () => {
 
 describe("blob-utils", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   it("revokes only valid blob: URLs safely", () => {
-    const revokeSpy = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    const revokeSpy = spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
 
     safeRevokeBlobUrl("blob:https://localhost/1234-5678");
     expect(revokeSpy).toHaveBeenCalledTimes(1);
