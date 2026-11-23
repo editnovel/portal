@@ -16,11 +16,7 @@ import {
   exportProjectFile,
   importProjectFile,
 } from "~/lib/project-storage";
-import {
-  exportCurrentEpub,
-  setLocalSaveEnabled,
-  state,
-} from "~/lib/store";
+import { exportCurrentEpub, setLocalSaveEnabled, state } from "~/lib/store";
 
 interface SaveExportPanelProps {
   isOpen: boolean;
@@ -68,8 +64,14 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
     const htmlLength = state.sectionGroups
       .flatMap((g) => g.sections)
       .reduce((acc, s) => acc + (s.htmlContent?.length || 0), 0);
-    const jsonOverhead = Math.round(htmlLength * 1.15) + state.spellCorrections.length * 150 + 20 * 1024;
-    const totalBytes = totalFiles > 0 ? Math.ceil(totalFiles * 1.34) + jsonOverhead : (htmlLength > 0 ? jsonOverhead : 0);
+    const jsonOverhead =
+      Math.round(htmlLength * 1.15) + state.spellCorrections.length * 150 + 20 * 1024;
+    const totalBytes =
+      totalFiles > 0
+        ? Math.ceil(totalFiles * 1.34) + jsonOverhead
+        : htmlLength > 0
+          ? jsonOverhead
+          : 0;
     return formatUnitSize(totalBytes);
   });
 
@@ -78,8 +80,10 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
     const htmlLength = state.sectionGroups
       .flatMap((g) => g.sections)
       .reduce((acc, s) => acc + (s.htmlContent?.length || 0), 0);
-    const jsonOverhead = Math.round(htmlLength * 1.15) + state.spellCorrections.length * 150 + 15 * 1024;
-    const totalBytes = totalFiles > 0 ? totalFiles + jsonOverhead : (htmlLength > 0 ? jsonOverhead : 0);
+    const jsonOverhead =
+      Math.round(htmlLength * 1.15) + state.spellCorrections.length * 150 + 15 * 1024;
+    const totalBytes =
+      totalFiles > 0 ? totalFiles + jsonOverhead : htmlLength > 0 ? jsonOverhead : 0;
     return formatUnitSize(totalBytes);
   });
 
@@ -158,13 +162,17 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
           <div class="rounded-xl border border-border/80 bg-background p-4 flex flex-col gap-3 shadow-2xs">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <Download class="w-4 h-4" />
                 </div>
                 <div class="flex flex-col min-w-0">
-                  <span class="text-xs font-semibold text-foreground">{t("saveExport.exportEpubTitle")}</span>
+                  <span class="text-xs font-semibold text-foreground">
+                    {t("saveExport.exportEpubTitle")}
+                  </span>
                   <span class="text-[11px] text-muted-foreground truncate">
-                    {state.metadata.title ? `${state.metadata.title}.epub` : t("saveExport.defaultBookFilename")}
+                    {state.metadata.title
+                      ? `${state.metadata.title}.epub`
+                      : t("saveExport.defaultBookFilename")}
                   </span>
                 </div>
               </div>
@@ -180,25 +188,33 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
             <button
               type="button"
               onClick={handleExportEpub}
-              disabled={exporting() || (state.files.length === 0 && state.sectionGroups.length === 0)}
+              disabled={
+                exporting() || (state.files.length === 0 && state.sectionGroups.length === 0)
+              }
               class="w-full py-2 px-3 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-xs shadow-xs transition-opacity cursor-pointer flex items-center justify-center gap-2"
             >
               <Show when={exporting()} fallback={<Download class="w-3.5 h-3.5" />}>
                 <Loader2 class="w-3.5 h-3.5 animate-spin" />
               </Show>
-              <span>{exporting() ? t("saveExport.exportingEpub") : t("saveExport.downloadEpub")}</span>
+              <span>
+                {exporting() ? t("saveExport.exportingEpub") : t("saveExport.downloadEpub")}
+              </span>
             </button>
           </div>
 
           <div class="rounded-xl border border-border/80 bg-background p-4 flex flex-col gap-3 shadow-2xs">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                <div class="w-8 h-8 rounded-lg bg-secondary text-foreground flex items-center justify-center shrink-0">
                   <FileBox class="w-4 h-4" />
                 </div>
                 <div class="flex flex-col min-w-0">
-                  <span class="text-xs font-semibold text-foreground">{t("saveExport.projectFileTitle")}</span>
-                  <span class="text-[11px] text-muted-foreground">{t("saveExport.projectFileFormat")}</span>
+                  <span class="text-xs font-semibold text-foreground">
+                    {t("saveExport.projectFileTitle")}
+                  </span>
+                  <span class="text-[11px] text-muted-foreground">
+                    {t("saveExport.projectFileFormat")}
+                  </span>
                 </div>
               </div>
               <span class="text-xs font-mono font-medium text-muted-foreground shrink-0 tabular-nums pt-0.5 select-none">
@@ -214,13 +230,18 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
               <button
                 type="button"
                 onClick={handleExportProject}
-                disabled={exportingProject() || (state.files.length === 0 && state.sectionGroups.length === 0)}
+                disabled={
+                  exportingProject() ||
+                  (state.files.length === 0 && state.sectionGroups.length === 0)
+                }
                 class="w-full py-1.5 px-3 rounded-lg border border-border bg-card hover:bg-secondary text-foreground text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
                 <Show when={exportingProject()} fallback={<FileDown class="w-3.5 h-3.5" />}>
                   <Loader2 class="w-3.5 h-3.5 animate-spin" />
                 </Show>
-                <span>{exportingProject() ? t("saveExport.savingProject") : t("saveExport.saveProject")}</span>
+                <span>
+                  {exportingProject() ? t("saveExport.savingProject") : t("saveExport.saveProject")}
+                </span>
               </button>
 
               <button
@@ -229,10 +250,17 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
                 disabled={importingProject()}
                 class="w-full py-1.5 px-3 rounded-lg border border-dashed border-border hover:bg-secondary text-foreground text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
               >
-                <Show when={importingProject()} fallback={<FileUp class="w-3.5 h-3.5 text-primary" />}>
+                <Show
+                  when={importingProject()}
+                  fallback={<FileUp class="w-3.5 h-3.5 text-primary" />}
+                >
                   <Loader2 class="w-3.5 h-3.5 animate-spin text-primary" />
                 </Show>
-                <span>{importingProject() ? t("saveExport.loadingProject") : t("saveExport.loadProject")}</span>
+                <span>
+                  {importingProject()
+                    ? t("saveExport.loadingProject")
+                    : t("saveExport.loadProject")}
+                </span>
               </button>
 
               <input
@@ -244,7 +272,7 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
               />
 
               <Show when={importError()}>
-                <p class="text-[11px] text-rose-500 font-medium">{importError()}</p>
+                <p class="text-[11px] text-destructive font-medium">{importError()}</p>
               </Show>
             </div>
           </div>
@@ -254,18 +282,22 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
           <div class="rounded-xl border border-border/80 bg-background p-4 flex flex-col gap-3 shadow-2xs">
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-2.5 min-w-0">
-                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <HardDrive class="w-4 h-4" />
                 </div>
                 <div class="flex flex-col min-w-0">
-                  <span class="text-xs font-semibold text-foreground">{t("saveExport.localMemoryTitle")}</span>
+                  <span class="text-xs font-semibold text-foreground">
+                    {t("saveExport.localMemoryTitle")}
+                  </span>
                   <span class="text-[10px] text-muted-foreground flex items-center gap-1">
                     <span
                       class={`w-1.5 h-1.5 rounded-full ${
-                        state.localSaveEnabled ? "bg-emerald-500" : "bg-muted-foreground/60"
+                        state.localSaveEnabled ? "bg-primary" : "bg-muted-foreground/60"
                       }`}
                     />
-                    {state.localSaveEnabled ? t("saveExport.savingActive") : t("saveExport.savingPaused")}
+                    {state.localSaveEnabled
+                      ? t("saveExport.savingActive")
+                      : t("saveExport.savingPaused")}
                   </span>
                 </div>
               </div>
@@ -298,7 +330,9 @@ export const SaveExportPanel: Component<SaveExportPanelProps> = (props) => {
                   />
                 </div>
                 <span class="text-xs font-medium text-foreground">
-                  {state.localSaveEnabled ? t("saveExport.savingEnabled") : t("saveExport.savingDisabled")}
+                  {state.localSaveEnabled
+                    ? t("saveExport.savingEnabled")
+                    : t("saveExport.savingDisabled")}
                 </span>
               </button>
 
