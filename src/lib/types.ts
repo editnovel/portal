@@ -4,6 +4,36 @@ export type { ReaderSettings };
 export type ModalStepId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type ModalDisplayMode = "expanded" | "docked";
 export type PresetId = "visual-novel" | "generic" | "webnovel" | "readme" | "paper";
+export type LanguageProfile = "auto" | "es" | "en";
+
+export interface ParseOptions {
+  language: LanguageProfile;
+  presetId: PresetId;
+}
+
+export interface OcrDetectionInfo {
+  needsOcr: boolean;
+  scannedPageNumbers: number[];
+}
+
+export interface OcrWordSpan {
+  text: string;
+  bbox: [number, number, number, number];
+  confidence: number;
+}
+
+export interface OcrLineInput {
+  text: string;
+  bbox: [number, number, number, number];
+  spans: OcrWordSpan[];
+}
+
+export interface OcrPageInput {
+  pageNum: number;
+  width: number;
+  height: number;
+  lines: OcrLineInput[];
+}
 
 export interface UploadedBookFile {
   id: string;

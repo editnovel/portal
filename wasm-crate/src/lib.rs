@@ -67,3 +67,44 @@ pub fn apply_editorial_transforms_wasm(
 pub fn build_epub_wasm(payload_json: &str) -> Result<Vec<u8>, JsValue> {
     editnovel_engine::build_epub_from_json(payload_json).map_err(|e| JsValue::from_str(&e))
 }
+
+#[wasm_bindgen]
+pub fn parse_book_file_with_options_wasm(
+    bytes: &[u8],
+    filename: &str,
+    options_json: &str,
+) -> Result<String, JsValue> {
+    editnovel_engine::parse_book_file_with_options_json(bytes, filename, options_json)
+        .map_err(|e| JsValue::from_str(&e))
+}
+
+#[wasm_bindgen]
+pub fn init_dictionary_wasm(lang: &str, bytes: &[u8]) -> Result<(), JsValue> {
+    editnovel_engine::init_dictionary(lang, bytes).map_err(|e| JsValue::from_str(&e))
+}
+
+#[wasm_bindgen]
+pub fn transform_section_blocks_wasm(request_json: &str) -> Result<String, JsValue> {
+    editnovel_engine::transform_section_blocks_json(request_json)
+        .map_err(|e| JsValue::from_str(&e))
+}
+
+#[wasm_bindgen]
+pub fn inject_ocr_pages_wasm(
+    file_id: &str,
+    pages_json: &str,
+    options_json: &str,
+) -> Result<String, JsValue> {
+    editnovel_engine::inject_ocr_pages_json(file_id, pages_json, options_json)
+        .map_err(|e| JsValue::from_str(&e))
+}
+
+#[wasm_bindgen]
+pub fn compress_brotli_wasm(bytes: &[u8]) -> Result<Vec<u8>, JsValue> {
+    editnovel_engine::compress_brotli(bytes).map_err(|e| JsValue::from_str(&e))
+}
+
+#[wasm_bindgen]
+pub fn decompress_brotli_wasm(bytes: &[u8]) -> Result<Vec<u8>, JsValue> {
+    editnovel_engine::decompress_brotli(bytes).map_err(|e| JsValue::from_str(&e))
+}

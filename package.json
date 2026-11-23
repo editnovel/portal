@@ -27,8 +27,10 @@
     "comlink": "^4.4.2",
     "corvu": "^0.7.2",
     "dexie": "^4.4.6",
+    "fflate": "^0.8.3",
     "lucide-solid": "^1.56.0",
     "nitro": "^3.0.260903-beta",
+    "onnxruntime-web": "^1.31.1",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.4.299",
     "solid-js": "^1.9.14",
@@ -41,8 +43,10 @@
     "@biomejs/biome": "^2.5.15",
     "@tailwindcss/vite": "^4.0.7",
     "@types/node": "^26.6.5",
+    "happy-dom": "^21.0.4",
     "tailwindcss": "^4.0.7",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
   },
   "engines": {
     "node": ">=24"

@@ -20,6 +20,14 @@ export default defineConfig({
     cors: true,
     headers: {
       "Access-Control-Allow-Origin": "*",
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
+    },
+  },
+  preview: {
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin",
+      "Cross-Origin-Embedder-Policy": "require-corp",
     },
   },
   optimizeDeps: {
@@ -34,11 +42,25 @@ export default defineConfig({
       "@solidjs/router",
       "@solid-primitives/i18n",
       "lucide-solid",
+      "onnxruntime-web",
     ],
   },
   plugins: [
     solidStart(),
     tailwindcss(),
-    nitro(),
+    nitro({
+      compressPublicAssets: {
+        brotli: true,
+        gzip: true,
+      },
+      routeRules: {
+        "/**": {
+          headers: {
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+          },
+        },
+      },
+    }),
   ],
 });
