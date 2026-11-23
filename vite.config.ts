@@ -49,6 +49,7 @@ export default defineConfig({
     solidStart(),
     tailwindcss(),
     nitro({
+      preset: process.env.VERCEL ? "vercel" : "bun",
       compressPublicAssets: {
         brotli: true,
         gzip: true,
