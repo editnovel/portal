@@ -24,7 +24,7 @@ build-web:
 check-web:
     .\node_modules\.bin\biome.exe check --write
     .\node_modules\.bin\tsc.exe
-    bun run scripts/audit-tokens.ts
+    bun run audit:tokens
 
 test-web:
-    bunx vitest run
+    bun test
