@@ -112,9 +112,7 @@ export default function FaqPage(): JSX.Element {
 
         <section class="p-8 rounded-2xl border border-border bg-card/60 text-center flex flex-col items-center gap-4">
           <h2 class="text-xl font-bold tracking-tight text-foreground">{t("faqPage.ctaTitle")}</h2>
-          <p class="text-xs text-muted-foreground max-w-md">
-            {t("faqPage.ctaDesc")}
-          </p>
+          <p class="text-xs text-muted-foreground max-w-md">{t("faqPage.ctaDesc")}</p>
           <A
             href="/"
             class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity shadow-sm"

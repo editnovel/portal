@@ -179,7 +179,9 @@ describe("OCR postprocessing and block/line sorting", () => {
                     {
                       text: "Recognized line",
                       bbox: [10, 10, 100, 30],
-                      spans: [{ text: "Recognized line", bbox: [10, 10, 100, 30], confidence: 0.97 }],
+                      spans: [
+                        { text: "Recognized line", bbox: [10, 10, 100, 30], confidence: 0.97 },
+                      ],
                     },
                   ],
                 },

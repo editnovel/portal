@@ -7,5 +7,6 @@ dist/
 .env*
 !.env.example
 /wasm/target/
+wasm-crate/target/
 *.log
 

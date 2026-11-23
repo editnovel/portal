@@ -8,7 +8,8 @@ export const RightPaneSwitcher: Component = () => {
   const isSpell = () => state.rightPaneMode === "spell";
 
   const pendingCount = createMemo(() => {
-    return state.spellCorrections.filter((c) => !c.applied && !c.ignored && c.enabled !== false).length;
+    return state.spellCorrections.filter((c) => !c.applied && !c.ignored && c.enabled !== false)
+      .length;
   });
 
   const handleToggle = () => {

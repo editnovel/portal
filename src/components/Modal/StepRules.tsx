@@ -12,8 +12,7 @@ import { state, toggleEditorialRule } from "~/lib/store";
 export const StepRules: Component = () => {
   const [showAdvanced, setShowAdvanced] = createSignal(false);
 
-  const stripHeadersRule = () =>
-    state.editorialRules.find((r) => r.id === "rule-strip-headers");
+  const stripHeadersRule = () => state.editorialRules.find((r) => r.id === "rule-strip-headers");
 
   return (
     <div class="flex flex-col gap-6 py-2">

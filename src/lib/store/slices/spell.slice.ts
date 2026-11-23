@@ -1,11 +1,7 @@
-import { type SetStoreFunction } from "solid-js/store";
+import type { SetStoreFunction } from "solid-js/store";
 import type { AppState, SpellAuditOptions, SpellCorrectionItem } from "../../types";
 import { auditSpellingInEngine } from "../../wasm-bridge";
-import {
-  correctionScrollTrigger,
-  flashStepSpinner,
-  setCorrectionScrollTrigger,
-} from "./ui.slice";
+import { correctionScrollTrigger, flashStepSpinner, setCorrectionScrollTrigger } from "./ui.slice";
 
 function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -39,12 +35,22 @@ export function createSpellSlice(
   }
 
   function acceptAllSpellCorrections(volumeFileId?: string): void {
-    setState("spellCorrections", (c) => !volumeFileId || c.fileId === volumeFileId, "enabled", true);
+    setState(
+      "spellCorrections",
+      (c) => !volumeFileId || c.fileId === volumeFileId,
+      "enabled",
+      true
+    );
     flashStepSpinner(7);
   }
 
   function discardAllSpellCorrections(volumeFileId?: string): void {
-    setState("spellCorrections", (c) => !volumeFileId || c.fileId === volumeFileId, "enabled", false);
+    setState(
+      "spellCorrections",
+      (c) => !volumeFileId || c.fileId === volumeFileId,
+      "enabled",
+      false
+    );
     flashStepSpinner(7);
   }
 
@@ -85,7 +91,13 @@ export function createSpellSlice(
     if (!corr || corr.applied) return;
     const replacement = customReplacement || corr.replacementToken;
 
-    const clean = (s?: string) => (s ? s.replace(/^\d+[\.\s\-\:]+/, "").trim().toLowerCase() : "");
+    const clean = (s?: string) =>
+      s
+        ? s
+            .replace(/^\d+[.\s\-:]+/, "")
+            .trim()
+            .toLowerCase()
+        : "";
     const cClean = clean(corr.sectionTitle);
 
     for (const group of state.sectionGroups) {
@@ -129,7 +141,13 @@ export function createSpellSlice(
     const corr = state.spellCorrections.find((c) => c.id === correctionId);
     if (!corr) return;
 
-    const clean = (s?: string) => (s ? s.replace(/^\d+[\.\s\-\:]+/, "").trim().toLowerCase() : "");
+    const clean = (s?: string) =>
+      s
+        ? s
+            .replace(/^\d+[.\s\-:]+/, "")
+            .trim()
+            .toLowerCase()
+        : "";
     const cClean = clean(corr.sectionTitle);
 
     let targetSecId: string | null = null;
@@ -168,7 +186,13 @@ export function createSpellSlice(
     if (toApply.length === 0) return;
 
     const appliedIds = new Set<string>();
-    const clean = (s?: string) => (s ? s.replace(/^\d+[\.\s\-\:]+/, "").trim().toLowerCase() : "");
+    const clean = (s?: string) =>
+      s
+        ? s
+            .replace(/^\d+[.\s\-:]+/, "")
+            .trim()
+            .toLowerCase()
+        : "";
 
     setState("sectionGroups", (groups) =>
       groups.map((group) => ({

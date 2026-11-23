@@ -122,79 +122,77 @@ export const StepperModal: Component = () => {
           isExpanded() ? "scale-100 translate-y-0 opacity-100" : "scale-95 -translate-y-2 opacity-0"
         }`}
       >
-          <div class="absolute top-4 right-4 z-20 flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setModalModeWithTransition("docked")}
-              class="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
-              title={t("modal.dockToTop")}
-            >
-              <ChevronUp class="w-4 h-4" />
-            </button>
-          </div>
+        <div class="absolute top-4 right-4 z-20 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setModalModeWithTransition("docked")}
+            class="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors cursor-pointer"
+            title={t("modal.dockToTop")}
+          >
+            <ChevronUp class="w-4 h-4" />
+          </button>
+        </div>
 
-          <Show when={showResetConfirm()}>
-            <div class="absolute inset-0 z-50 backdrop-blur-md bg-background/85 flex items-center justify-center p-6">
-              <div class="w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-2xl flex flex-col gap-4">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-destructive/15 text-destructive flex items-center justify-center shrink-0">
-                    <AlertTriangle class="w-5 h-5" />
-                  </div>
-                  <div class="flex flex-col">
-                    <h4 class="text-sm font-semibold text-foreground">
-                      {t("modal.resetConfirmTitle")}
-                    </h4>
-                    <p class="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                      {t("modal.resetConfirmDesc")}
-                    </p>
-                  </div>
+        <Show when={showResetConfirm()}>
+          <div class="absolute inset-0 z-50 backdrop-blur-md bg-background/85 flex items-center justify-center p-6">
+            <div class="w-full max-w-sm rounded-xl border border-border bg-card p-5 shadow-2xl flex flex-col gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-destructive/15 text-destructive flex items-center justify-center shrink-0">
+                  <AlertTriangle class="w-5 h-5" />
                 </div>
-
-                <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-border/60">
-                  <button
-                    type="button"
-                    onClick={handleConfirmReset}
-                    class="px-3 py-1.5 rounded-lg border border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    {t("modal.resetConfirmButton")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowResetConfirm(false)}
-                    class="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 shadow-xs transition-opacity cursor-pointer"
-                  >
-                    {t("modal.resetCancelButton")}
-                  </button>
+                <div class="flex flex-col">
+                  <h4 class="text-sm font-semibold text-foreground">
+                    {t("modal.resetConfirmTitle")}
+                  </h4>
+                  <p class="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    {t("modal.resetConfirmDesc")}
+                  </p>
                 </div>
               </div>
-            </div>
-          </Show>
 
-          <div class="pt-5 pb-3 px-6 sm:px-8 border-b border-border/60">
-            <div class="flex items-center justify-between max-w-4xl mx-auto gap-3">
-              <div class="flex flex-col items-center shrink-0">
+              <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-border/60">
                 <button
                   type="button"
-                  onClick={() => setShowResetConfirm(true)}
-                  class="flex flex-col items-center group cursor-pointer"
-                  title={t("modal.newProject")}
+                  onClick={handleConfirmReset}
+                  class="px-3 py-1.5 rounded-lg border border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground text-xs font-semibold transition-colors cursor-pointer"
                 >
-                  <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-muted text-muted-foreground group-hover:bg-secondary group-hover:text-foreground">
-                    <Plus class="w-4 h-4" />
-                  </div>
-                  <div class="flex flex-col items-center mt-1.5 text-center">
-                    <span class="text-xs font-semibold leading-tight text-muted-foreground group-hover:text-foreground">
-                      {t("modal.new")}
-                    </span>
-                  </div>
+                  {t("modal.resetConfirmButton")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(false)}
+                  class="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 shadow-xs transition-opacity cursor-pointer"
+                >
+                  {t("modal.resetCancelButton")}
                 </button>
               </div>
+            </div>
+          </div>
+        </Show>
 
-              <div class="h-8 w-px bg-border/60 shrink-0 mx-1 self-center" />
-
-              <div
-                class="grid grid-cols-8 flex-1 relative px-1 py-1"
+        <div class="pt-5 pb-3 px-6 sm:px-8 border-b border-border/60">
+          <div class="flex items-center justify-between max-w-4xl mx-auto gap-3">
+            <div class="flex flex-col items-center shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                class="flex flex-col items-center group cursor-pointer"
+                title={t("modal.newProject")}
               >
+                <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-muted text-muted-foreground group-hover:bg-secondary group-hover:text-foreground">
+                  <Plus class="w-4 h-4" />
+                </div>
+                <div class="flex flex-col items-center mt-1.5 text-center">
+                  <span class="text-xs font-semibold leading-tight text-muted-foreground group-hover:text-foreground">
+                    {t("modal.new")}
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            <div class="h-8 w-px bg-border/60 shrink-0 mx-1 self-center" />
+
+            <div class="grid grid-cols-8 flex-1 relative px-1 py-1">
               <For each={STEPS}>
                 {(step, index) => {
                   const isActive = () => currentStep() === step.id;
@@ -241,80 +239,80 @@ export const StepperModal: Component = () => {
                 }}
               </For>
             </div>
-            </div>
-          </div>
-
-          <div class="flex-1 overflow-y-auto px-6 py-4 min-h-[360px]">
-            <Show when={!renderedSteps()[currentStep()]}>
-              <div class="flex items-center justify-center py-24">
-                <Loader2 class="w-6 h-6 animate-spin text-primary opacity-60" />
-              </div>
-            </Show>
-
-            <Show when={renderedSteps()[1]}>
-              <div class={currentStep() === 1 ? "contents" : "hidden"}>
-                <StepInfo />
-              </div>
-            </Show>
-            <Show when={renderedSteps()[2]}>
-              <div class={currentStep() === 2 ? "contents" : "hidden"}>
-                <StepPresets />
-              </div>
-            </Show>
-            <Show when={renderedSteps()[3]}>
-              <div class={currentStep() === 3 ? "contents" : "hidden"}>
-                <StepFiles />
-              </div>
-            </Show>
-            <Show when={renderedSteps()[4]}>
-              <div class={currentStep() === 4 ? "contents" : "hidden"}>
-                <StepSections />
-              </div>
-            </Show>
-            <Show when={renderedSteps()[5]}>
-              <div class={currentStep() === 5 ? "contents" : "hidden"}>
-                <StepConfig />
-              </div>
-            </Show>
-            <Show when={renderedSteps()[6]}>
-              <div class={currentStep() === 6 ? "contents" : "hidden"}>
-                <StepImages />
-              </div>
-            </Show>
-            <Show when={renderedSteps()[7]}>
-              <div class={currentStep() === 7 ? "contents" : "hidden"}>
-                <StepSpell />
-              </div>
-            </Show>
-            <Show when={renderedSteps()[8]}>
-              <div class={currentStep() === 8 ? "contents" : "hidden"}>
-                <StepRules />
-              </div>
-            </Show>
           </div>
         </div>
 
-        <Show when={isExpanded() && canGoBack()}>
-          <button
-            type="button"
-            onClick={handlePrev}
-            class="fixed left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 w-11 h-11 rounded-full border border-border bg-card/95 hover:bg-accent text-card-foreground shadow-xl flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
-            title={t("modal.prevStep")}
-          >
-            <ChevronLeft class="w-5 h-5" />
-          </button>
-        </Show>
+        <div class="flex-1 overflow-y-auto px-6 py-4 min-h-[360px]">
+          <Show when={!renderedSteps()[currentStep()]}>
+            <div class="flex items-center justify-center py-24">
+              <Loader2 class="w-6 h-6 animate-spin text-primary opacity-60" />
+            </div>
+          </Show>
 
-        <Show when={isExpanded() && canGoForward()}>
-          <button
-            type="button"
-            onClick={handleNext}
-            class="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 w-11 h-11 rounded-full border border-border bg-card/95 hover:bg-accent text-card-foreground shadow-xl flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
-            title={t("modal.nextStep")}
-          >
-            <ChevronRight class="w-5 h-5" />
-          </button>
-        </Show>
+          <Show when={renderedSteps()[1]}>
+            <div class={currentStep() === 1 ? "contents" : "hidden"}>
+              <StepInfo />
+            </div>
+          </Show>
+          <Show when={renderedSteps()[2]}>
+            <div class={currentStep() === 2 ? "contents" : "hidden"}>
+              <StepPresets />
+            </div>
+          </Show>
+          <Show when={renderedSteps()[3]}>
+            <div class={currentStep() === 3 ? "contents" : "hidden"}>
+              <StepFiles />
+            </div>
+          </Show>
+          <Show when={renderedSteps()[4]}>
+            <div class={currentStep() === 4 ? "contents" : "hidden"}>
+              <StepSections />
+            </div>
+          </Show>
+          <Show when={renderedSteps()[5]}>
+            <div class={currentStep() === 5 ? "contents" : "hidden"}>
+              <StepConfig />
+            </div>
+          </Show>
+          <Show when={renderedSteps()[6]}>
+            <div class={currentStep() === 6 ? "contents" : "hidden"}>
+              <StepImages />
+            </div>
+          </Show>
+          <Show when={renderedSteps()[7]}>
+            <div class={currentStep() === 7 ? "contents" : "hidden"}>
+              <StepSpell />
+            </div>
+          </Show>
+          <Show when={renderedSteps()[8]}>
+            <div class={currentStep() === 8 ? "contents" : "hidden"}>
+              <StepRules />
+            </div>
+          </Show>
+        </div>
       </div>
+
+      <Show when={isExpanded() && canGoBack()}>
+        <button
+          type="button"
+          onClick={handlePrev}
+          class="fixed left-4 md:left-8 top-1/2 -translate-y-1/2 z-50 w-11 h-11 rounded-full border border-border bg-card/95 hover:bg-accent text-card-foreground shadow-xl flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+          title={t("modal.prevStep")}
+        >
+          <ChevronLeft class="w-5 h-5" />
+        </button>
+      </Show>
+
+      <Show when={isExpanded() && canGoForward()}>
+        <button
+          type="button"
+          onClick={handleNext}
+          class="fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-50 w-11 h-11 rounded-full border border-border bg-card/95 hover:bg-accent text-card-foreground shadow-xl flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+          title={t("modal.nextStep")}
+        >
+          <ChevronRight class="w-5 h-5" />
+        </button>
+      </Show>
+    </div>
   );
 };

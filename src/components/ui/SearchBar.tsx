@@ -85,10 +85,7 @@ export const SearchBar: Component<SearchBarProps> = (props) => {
 
         <Show when={props.query.trim().length > 0 && !props.isSearching}>
           <span class="text-[11px] font-mono text-muted-foreground px-1 shrink-0 select-none">
-            <Show
-              when={(props.totalMatches ?? 0) > 0}
-              fallback={t("search.noMatches")}
-            >
+            <Show when={(props.totalMatches ?? 0) > 0} fallback={t("search.noMatches")}>
               {t("search.matchCount", {
                 current: (props.currentIndex ?? 0) + 1,
                 total: props.totalMatches ?? 0,

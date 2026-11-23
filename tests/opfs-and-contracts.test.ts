@@ -82,10 +82,7 @@ class MockMemoryDirHandle {
     throw new DOMException(`Directory not found: ${name}`, "NotFoundError");
   }
 
-  async getFileHandle(
-    name: string,
-    options?: { create?: boolean }
-  ): Promise<MockMemoryFileHandle> {
+  async getFileHandle(name: string, options?: { create?: boolean }): Promise<MockMemoryFileHandle> {
     const existing = this.files.get(name);
     if (existing) return existing;
     if (options?.create) {

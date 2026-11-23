@@ -120,9 +120,7 @@ export const CustomRegexManager: Component = () => {
                     <span class="font-mono text-[11px] font-medium text-foreground bg-secondary px-1.5 py-0.5 rounded truncate max-w-[140px]">
                       {rule.pattern}
                     </span>
-                    <span class="text-[10px] text-muted-foreground font-mono">
-                      /{rule.flags}/
-                    </span>
+                    <span class="text-[10px] text-muted-foreground font-mono">/{rule.flags}/</span>
                   </div>
                   <span class="text-[11px] text-muted-foreground line-clamp-2">
                     {rule.description}
@@ -206,9 +204,7 @@ export const CustomRegexManager: Component = () => {
                     <span class="font-mono text-foreground font-medium">{rule.pattern}</span>
                     <span class="text-muted-foreground font-mono">→</span>
                     <span class="font-mono text-primary font-medium">"{rule.replacement}"</span>
-                    <span class="text-[10px] text-muted-foreground font-mono">
-                      /{rule.flags}/
-                    </span>
+                    <span class="text-[10px] text-muted-foreground font-mono">/{rule.flags}/</span>
                   </div>
 
                   <div class="flex items-center gap-2">

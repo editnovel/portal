@@ -1,11 +1,6 @@
 import { type Component, createSignal, For, Show } from "solid-js";
 import { t } from "~/lib/i18n";
-import {
-  detectedSceneBreaks,
-  setUnifiedBreakSymbol,
-  setUnifyBreaks,
-  state,
-} from "~/lib/store";
+import { detectedSceneBreaks, setUnifiedBreakSymbol, setUnifyBreaks, state } from "~/lib/store";
 
 const PRESET_BREAKS = ["◆ ◇ ◆ ◇ ◆", "* * *", "✦ ✦ ✦", "◇ ◇ ◇", "§ § §"];
 
@@ -33,9 +28,7 @@ export const BreaksRuleSection: Component = () => {
               {detectedSceneBreaks().length}
             </span>
           </div>
-          <span class="text-[11px] text-muted-foreground">
-            {t("stepRules.unifyBreaksDesc")}
-          </span>
+          <span class="text-[11px] text-muted-foreground">{t("stepRules.unifyBreaksDesc")}</span>
         </div>
 
         <label class="relative inline-flex items-center cursor-pointer shrink-0">
@@ -120,9 +113,7 @@ export const BreaksRuleSection: Component = () => {
                   <Show when={item.snippetBefore || item.snippetAfter}>
                     <div class="text-[10px] text-muted-foreground italic truncate">
                       <span>{item.snippetBefore}</span>
-                      <span class="mx-1 font-mono font-bold text-foreground">
-                        [{item.symbol}]
-                      </span>
+                      <span class="mx-1 font-mono font-bold text-foreground">[{item.symbol}]</span>
                       <span>{item.snippetAfter}</span>
                     </div>
                   </Show>

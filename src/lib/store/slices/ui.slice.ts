@@ -1,6 +1,6 @@
 import { batch, createSignal } from "solid-js";
-import { type SetStoreFunction } from "solid-js/store";
-import { type ReaderSettings } from "../../reader-settings";
+import type { SetStoreFunction } from "solid-js/store";
+import type { ReaderSettings } from "../../reader-settings";
 import type { AppState, ModalDisplayMode, ModalStepId, PresetId } from "../../types";
 
 export function getInitialLocalSaveEnabled(): boolean {

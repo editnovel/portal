@@ -67,7 +67,7 @@ export const dict = {
     readerCustomizer: "Reader Customizer",
     openReaderSettings: "Open Reader Settings",
     noChapterLoadedTitle: "No chapter selected or document loaded.",
-    noChapterLoadedDesc: "Make sure to upload a PDF file in \"Sources\" to preview the formatting.",
+    noChapterLoadedDesc: 'Make sure to upload a PDF file in "Sources" to preview the formatting.',
     togglePaneView: "Toggle view",
   },
   pdfViewer: {
@@ -294,14 +294,12 @@ export const dict = {
     detectedDialogueLabel: "Detected dialogue lines across document",
     noDialogueDetected: "No dialogue lines detected in loaded sections.",
     unifyQuotesTitle: "Unify Quotation Marks",
-    unifyQuotesDesc:
-      "Converts straight quotes and mixed styles into uniform typographic quotes.",
+    unifyQuotesDesc: "Converts straight quotes and mixed styles into uniform typographic quotes.",
     quotesSymbolLabel: "Unified quotes",
     detectedQuotesLabel: "Detected quotes across document",
     noQuotesDetected: "No quotes detected in loaded sections.",
     unifyEllipsisTitle: "Unify Typographic Ellipses",
-    unifyEllipsisDesc:
-      "Standardizes multiple periods into typographic ellipsis characters.",
+    unifyEllipsisDesc: "Standardizes multiple periods into typographic ellipsis characters.",
     ellipsisSymbolLabel: "Unified ellipsis",
     detectedEllipsisLabel: "Detected ellipses across document",
     noEllipsisDetected: "No ellipses detected in loaded sections.",
@@ -365,8 +363,7 @@ export const dict = {
     dropCoverHere: "Drop an image here or click",
     coverHint: "Recommended: vertical JPG, PNG or WEBP.",
     detectedCoversTitle: "Detected covers ({{ count }})",
-    detectedCoversSubtitle:
-      "Select the cover you want to use as the official book cover.",
+    detectedCoversSubtitle: "Select the cover you want to use as the official book cover.",
     detectedButton: "Detected ({{ count }})",
     selectFromDetectedTooltip: "Choose among {{ count }} detected covers",
     availableDetectedCovers: "{{ count }} detected covers",
@@ -574,8 +571,7 @@ export const dict = {
     clearConfirm: "Are you sure you want to delete the copy saved in this browser?",
   },
   workspace: {
-    savedSessionFound:
-      "A previously saved session of \"{{ title }}\" was found ({{ time }}).",
+    savedSessionFound: 'A previously saved session of "{{ title }}" was found ({{ time }}).',
     restoringSession: "Restoring...",
     restoreSession: "Restore session",
     dismiss: "Dismiss",
@@ -643,8 +639,7 @@ export const dict = {
   faqPage: {
     badge: "Help Center & FAQ",
     title: "Frequently Asked Questions",
-    desc:
-      "Everything you need to know about how EditNovel works, file management, and publishing standards.",
+    desc: "Everything you need to know about how EditNovel works, file management, and publishing standards.",
     ctaTitle: "Ready to try it?",
     ctaDesc:
       "Convert and typeset your light novels with publication quality from the very first moment.",

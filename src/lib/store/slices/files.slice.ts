@@ -1,9 +1,17 @@
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { createMemo } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
+import { getStoredLanguageProfile } from "~/components/Modal/StepPresets";
 import { safeRevokeBlobUrl } from "../../blob-utils";
+import { createOcrClient, type OcrClientProgress, type OcrPageImageInput } from "../../ocr";
 import type { AppState, ExtractedImage, UploadedBookFile } from "../../types";
-import { parseBookFile, removeBookFileFromEngine } from "../../wasm-bridge";
+import { injectOcrPages, parseBookFile, removeBookFileFromEngine } from "../../wasm-bridge";
 import { flashStepSpinner } from "./ui.slice";
+
+if (typeof window !== "undefined") {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+}
 
 function matchesDiscardedImage(src: string, discarded: ExtractedImage[]): boolean {
   if (!src) return false;
@@ -120,7 +128,7 @@ export function createFilesSlice(
         const blobUrl = isPdf ? URL.createObjectURL(f) : undefined;
         setState("files", (item) => item.id === upFile.id, "progress", 50);
         const payload = await parseBookFile(f, {
-          language: "auto",
+          language: getStoredLanguageProfile(),
           presetId: state.selectedPreset,
         });
         setState("files", (item) => item.id === upFile.id, "progress", 90);
@@ -131,6 +139,8 @@ export function createFilesSlice(
           sectionCount: payload.groups.reduce((acc, g) => acc + g.sections.length, 0),
           imageCount: payload.images.length,
           pdfBlobUrl: blobUrl,
+          needsOcr: Boolean(payload.needsOcr),
+          scannedPageNumbers: payload.scannedPageNumbers ?? [],
         });
 
         setState("sectionGroups", (prev) => [...prev, ...payload.groups]);
@@ -274,6 +284,131 @@ export function createFilesSlice(
     toggleDiscardTinyImages();
   }
 
+  async function renderPdfPageToRgba(
+    pdfDoc: pdfjsLib.PDFDocumentProxy,
+    pageNum: number
+  ): Promise<OcrPageImageInput> {
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 2.0 });
+    const width = Math.max(1, Math.round(viewport.width));
+    const height = Math.max(1, Math.round(viewport.height));
+
+    if (typeof OffscreenCanvas !== "undefined") {
+      const canvas = new OffscreenCanvas(width, height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Unable to acquire 2D context for OCR rasterization");
+      }
+      await page.render({
+        canvasContext: ctx as unknown as CanvasRenderingContext2D,
+        viewport,
+        canvas: canvas as unknown as HTMLCanvasElement,
+      }).promise;
+      const imageData = ctx.getImageData(0, 0, width, height);
+      return {
+        pageNum,
+        width,
+        height,
+        rgba: new Uint8ClampedArray(imageData.data),
+      };
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Unable to acquire canvas context for OCR rasterization");
+    }
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    return {
+      pageNum,
+      width,
+      height,
+      rgba: new Uint8ClampedArray(imageData.data),
+    };
+  }
+
+  async function runOcrForFile(
+    fileId: string,
+    onProgress?: (progress: OcrClientProgress) => void
+  ): Promise<void> {
+    const target = state.files.find((f) => f.id === fileId);
+    if (target?.extension !== "pdf") return;
+
+    const pageNumbers = target.scannedPageNumbers ?? [];
+    if (pageNumbers.length === 0) return;
+
+    let pdfSource: ArrayBuffer | null = null;
+    if (target.rawFile) {
+      pdfSource = await target.rawFile.arrayBuffer();
+    } else if (target.pdfBlobUrl) {
+      const resp = await fetch(target.pdfBlobUrl);
+      pdfSource = await resp.arrayBuffer();
+    }
+    if (!pdfSource) {
+      throw new Error("Original PDF bytes are unavailable for OCR");
+    }
+
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(pdfSource) });
+    const pdfDoc = await loadingTask.promise;
+    const client = createOcrClient();
+    setState("isProcessing", true);
+
+    try {
+      const renderedPages: OcrPageImageInput[] = [];
+      for (const pageNum of pageNumbers) {
+        renderedPages.push(await renderPdfPageToRgba(pdfDoc, pageNum));
+      }
+
+      const ocrPages = await client.recognizePages(renderedPages, onProgress);
+      const payload = await injectOcrPages(target.name, ocrPages, {
+        language: getStoredLanguageProfile(),
+        presetId: state.selectedPreset,
+      });
+
+      const oldUrlByName = new Map<string, string>();
+      for (const img of state.images) {
+        if (img.fileId === target.name && img.url) {
+          oldUrlByName.set(img.name, img.url);
+        }
+      }
+      const nextImages = payload.images.map((img) => ({
+        ...img,
+        url: img.url || oldUrlByName.get(img.name) || "",
+      }));
+
+      setState("sectionGroups", (prev) => [
+        ...prev.filter((g) => g.fileId !== target.name),
+        ...payload.groups,
+      ]);
+      setState("images", (prev) => [
+        ...prev.filter((img) => img.fileId !== target.name),
+        ...nextImages,
+      ]);
+      setState("spellCorrections", (prev) => [
+        ...prev.filter((c) => c.fileId !== target.name),
+        ...payload.spellCorrections,
+      ]);
+      setState("files", (item) => item.id === fileId, {
+        needsOcr: false,
+        scannedPageNumbers: [],
+        sectionCount: payload.groups.reduce((acc, g) => acc + g.sections.length, 0),
+        imageCount: nextImages.length,
+      });
+
+      if (payload.groups[0]?.sections[0]) {
+        setState("activeSectionId", payload.groups[0].sections[0].id);
+      }
+      applyAutoMetadataSuggestions();
+    } finally {
+      await client.dispose();
+      await loadingTask.destroy();
+      setState("isProcessing", false);
+    }
+  }
+
   return {
     hasReadyFiles,
     addFiles,
@@ -284,5 +419,6 @@ export function createFilesSlice(
     toggleShowSpoilers,
     toggleDiscardTinyImages,
     discardTinyImages,
+    runOcrForFile,
   };
 }

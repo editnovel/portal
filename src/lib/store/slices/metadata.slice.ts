@@ -1,5 +1,5 @@
 import { batch } from "solid-js";
-import { type SetStoreFunction } from "solid-js/store";
+import type { SetStoreFunction } from "solid-js/store";
 import { safeRevokeBlobUrl } from "../../blob-utils";
 import { getImageDimensions } from "../../hardware-image";
 import type { AppState, BookMetadata, ChapterSection, ExtractedImage } from "../../types";
@@ -101,13 +101,10 @@ export function createMetadataSlice(state: AppState, setState: SetStoreFunction<
         ""
       );
       s = s.replace(
-        /\s*[\(\[\{]\s*(?:vol(?:umen|ume|\.)?|tom[oe]|book|libro|parte|part|v\.?)?\s*\d+.*?[\)\]\}]\s*$/i,
+        /\s*[([{]\s*(?:vol(?:umen|ume|\.)?|tom[oe]|book|libro|parte|part|v\.?)?\s*\d+.*?[)\]}]\s*$/i,
         ""
       );
-      s = s.replace(
-        /\s+(?:vol(?:umen|ume|\.)?|tom[oe]|book|libro|parte|part)\.?\s*\d+.*$/i,
-        ""
-      );
+      s = s.replace(/\s+(?:vol(?:umen|ume|\.)?|tom[oe]|book|libro|parte|part)\.?\s*\d+.*$/i, "");
       s = s.replace(/\s*[-–—:|~#]\s*\d+\s*$/i, "");
       s = s.replace(/[\s\-–—:_]+$/, "").trim();
       return s;
@@ -261,7 +258,9 @@ export function createMetadataSlice(state: AppState, setState: SetStoreFunction<
       const coverHtml = `<div class="full-illustration-wrap"><img src="${url}" alt="Portada" class="full-illustration-img" /></div>`;
       setState("sectionGroups", (prevGroups) =>
         prevGroups.map((group) => {
-          const coverSec = group.sections.find((s) => s.type === "cover" || s.id.endsWith("-cover"));
+          const coverSec = group.sections.find(
+            (s) => s.type === "cover" || s.id.endsWith("-cover")
+          );
           if (coverSec) {
             return {
               ...group,
@@ -369,7 +368,9 @@ export function createMetadataSlice(state: AppState, setState: SetStoreFunction<
 
       setState("sectionGroups", (prevGroups) =>
         prevGroups.map((group) => {
-          const coverSec = group.sections.find((s) => s.type === "cover" || s.id.endsWith("-cover"));
+          const coverSec = group.sections.find(
+            (s) => s.type === "cover" || s.id.endsWith("-cover")
+          );
           if (coverSec) {
             coverFound = true;
             return {
@@ -436,7 +437,9 @@ export function createMetadataSlice(state: AppState, setState: SetStoreFunction<
       let activeCoverId: string | null = null;
       setState("sectionGroups", (prevGroups) =>
         prevGroups.map((group) => {
-          const coverSec = group.sections.find((s) => s.type === "cover" || s.id.endsWith("-cover"));
+          const coverSec = group.sections.find(
+            (s) => s.type === "cover" || s.id.endsWith("-cover")
+          );
           if (coverSec && state.activeSectionId === coverSec.id) {
             activeCoverId = coverSec.id;
           }
@@ -500,7 +503,9 @@ export function createMetadataSlice(state: AppState, setState: SetStoreFunction<
 
       setState("sectionGroups", (prevGroups) =>
         prevGroups.map((group) => {
-          const coverSec = group.sections.find((s) => s.type === "cover" || s.id.endsWith("-cover"));
+          const coverSec = group.sections.find(
+            (s) => s.type === "cover" || s.id.endsWith("-cover")
+          );
           if (coverSec) {
             coverFound = true;
             return {

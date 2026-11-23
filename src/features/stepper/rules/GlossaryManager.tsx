@@ -23,9 +23,7 @@ export const GlossaryManager: Component = () => {
   return (
     <div class="flex flex-col gap-3">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-semibold text-foreground">
-          {t("stepRules.glossaryTitle")}
-        </span>
+        <span class="text-xs font-semibold text-foreground">{t("stepRules.glossaryTitle")}</span>
         <span class="text-[10px] text-muted-foreground font-mono">
           {t("stepRules.replacementsCount", { count: state.glossary.length })}
         </span>

@@ -66,22 +66,21 @@ export const FindAndReplaceExtension = Extension.create<any, SearchStorage>({
   },
 
   addCommands() {
-    const ext = this;
     return {
       setSearchTerm:
         (searchTerm: string) =>
         ({ editor, tr, dispatch }: any) => {
-          ext.storage.searchTerm = searchTerm;
+          this.storage.searchTerm = searchTerm;
           const results = findMatchesInDoc(
             editor.state.doc,
             searchTerm,
-            ext.storage.caseSensitive
+            this.storage.caseSensitive
           );
-          ext.storage.results = results;
-          ext.storage.currentIndex = results.length > 0 ? 0 : null;
+          this.storage.results = results;
+          this.storage.currentIndex = results.length > 0 ? 0 : null;
           if (dispatch) {
             tr.setMeta(searchPluginKey, { update: true });
-            if (ext.storage.currentIndex !== null && results[0]) {
+            if (this.storage.currentIndex !== null && results[0]) {
               const res = results[0];
               tr.setSelection(TextSelection.create(tr.doc, res.from, res.to));
               tr.scrollIntoView();
@@ -93,14 +92,14 @@ export const FindAndReplaceExtension = Extension.create<any, SearchStorage>({
       setCaseSensitive:
         (caseSensitive: boolean) =>
         ({ editor, tr, dispatch }: any) => {
-          ext.storage.caseSensitive = caseSensitive;
+          this.storage.caseSensitive = caseSensitive;
           const results = findMatchesInDoc(
             editor.state.doc,
-            ext.storage.searchTerm,
+            this.storage.searchTerm,
             caseSensitive
           );
-          ext.storage.results = results;
-          ext.storage.currentIndex = results.length > 0 ? 0 : null;
+          this.storage.results = results;
+          this.storage.currentIndex = results.length > 0 ? 0 : null;
           if (dispatch) {
             tr.setMeta(searchPluginKey, { update: true });
           }
@@ -110,13 +109,11 @@ export const FindAndReplaceExtension = Extension.create<any, SearchStorage>({
       goToNextResult:
         () =>
         ({ tr, dispatch }: any) => {
-          const { results, currentIndex } = ext.storage;
+          const { results, currentIndex } = this.storage;
           if (results.length === 0) return false;
           const nextIndex =
-            currentIndex === null || currentIndex >= results.length - 1
-              ? 0
-              : currentIndex + 1;
-          ext.storage.currentIndex = nextIndex;
+            currentIndex === null || currentIndex >= results.length - 1 ? 0 : currentIndex + 1;
+          this.storage.currentIndex = nextIndex;
           if (dispatch) {
             const res = results[nextIndex];
             tr.setSelection(TextSelection.create(tr.doc, res.from, res.to));
@@ -129,13 +126,11 @@ export const FindAndReplaceExtension = Extension.create<any, SearchStorage>({
       goToPreviousResult:
         () =>
         ({ tr, dispatch }: any) => {
-          const { results, currentIndex } = ext.storage;
+          const { results, currentIndex } = this.storage;
           if (results.length === 0) return false;
           const prevIndex =
-            currentIndex === null || currentIndex <= 0
-              ? results.length - 1
-              : currentIndex - 1;
-          ext.storage.currentIndex = prevIndex;
+            currentIndex === null || currentIndex <= 0 ? results.length - 1 : currentIndex - 1;
+          this.storage.currentIndex = prevIndex;
           if (dispatch) {
             const res = results[prevIndex];
             tr.setSelection(TextSelection.create(tr.doc, res.from, res.to));
@@ -154,9 +149,9 @@ export const FindAndReplaceExtension = Extension.create<any, SearchStorage>({
       clearSearch:
         () =>
         ({ tr, dispatch }: any) => {
-          ext.storage.searchTerm = "";
-          ext.storage.results = [];
-          ext.storage.currentIndex = null;
+          this.storage.searchTerm = "";
+          this.storage.results = [];
+          this.storage.currentIndex = null;
           if (dispatch) {
             tr.setMeta(searchPluginKey, { update: true });
           }

@@ -340,6 +340,7 @@ export const {
   toggleShowSpoilers,
   toggleDiscardTinyImages,
   discardTinyImages,
+  runOcrForFile,
 } = filesSlice;
 
 export { filterDiscardedImages };

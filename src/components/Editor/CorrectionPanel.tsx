@@ -1,5 +1,13 @@
 import { BookPlus, Check, CheckCheck, Loader2, SpellCheck2 } from "lucide-solid";
-import { type Component, createEffect, createMemo, createSignal, For, onCleanup, Show } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onCleanup,
+  Show,
+} from "solid-js";
 import { ApplyAllModal } from "~/features/corrections/components/ApplyAllModal";
 import { CorrectionCard } from "~/features/corrections/components/CorrectionCard";
 import { CorrectionDictionaryInput } from "~/features/corrections/components/CorrectionDictionaryInput";
@@ -76,7 +84,7 @@ export const CorrectionPanel: Component = () => {
       map.set(s.id, i);
       map.set(s.title, i);
       map.set(s.originalTitle, i);
-      const cleanTitle = s.title.replace(/^\d+[\.\s\-\:]+/, "").trim();
+      const cleanTitle = s.title.replace(/^\d+[.\s\-:]+/, "").trim();
       if (cleanTitle) {
         map.set(cleanTitle, i);
       }
@@ -103,7 +111,9 @@ export const CorrectionPanel: Component = () => {
     } else if (cat === "grammar") {
       list = list.filter((c) => c.category === "grammar");
     } else if (cat === "style") {
-      list = list.filter((c) => c.category === "smell" || c.category === "style" || c.category === "dictionary");
+      list = list.filter(
+        (c) => c.category === "smell" || c.category === "style" || c.category === "dictionary"
+      );
     }
 
     const q = searchQuery().trim().toLowerCase();
@@ -131,7 +141,7 @@ export const CorrectionPanel: Component = () => {
     for (const c of list) {
       let secIdx = idxMap.get(c.sectionTitle);
       if (secIdx === undefined && c.sectionTitle) {
-        const cleanC = c.sectionTitle.replace(/^\d+[\.\s\-\:]+/, "").trim();
+        const cleanC = c.sectionTitle.replace(/^\d+[.\s\-:]+/, "").trim();
         secIdx = idxMap.get(cleanC);
       }
       if (secIdx === undefined) {
@@ -197,7 +207,9 @@ export const CorrectionPanel: Component = () => {
       }
     }
 
-    const targetHeader = scrollContainerRef.querySelector(`[data-section-header-index="${targetIdx}"]`);
+    const targetHeader = scrollContainerRef.querySelector(
+      `[data-section-header-index="${targetIdx}"]`
+    );
     if (targetHeader instanceof HTMLElement) {
       const offsetTop = targetHeader.offsetTop;
       scrollContainerRef.scrollTo({
@@ -424,7 +436,9 @@ export const CorrectionPanel: Component = () => {
               <div class="flex-1 flex flex-col items-center justify-center p-8 text-center text-xs text-muted-foreground gap-2 animate-pulse">
                 <Loader2 class="w-8 h-8 text-primary animate-spin" />
                 <p class="font-medium text-foreground">{t("stepFiles.parsingBackground")}</p>
-                <p class="text-[11px] text-muted-foreground">{t("correctionPanel.auditingNotice")}</p>
+                <p class="text-[11px] text-muted-foreground">
+                  {t("correctionPanel.auditingNotice")}
+                </p>
               </div>
             </Show>
           }
@@ -451,7 +465,9 @@ export const CorrectionPanel: Component = () => {
                         correction={corr}
                         isSelected={state.selectedCorrectionId === corr.id}
                         onSelect={() => navigateToCorrection(corr.id)}
-                        onApply={(id, customReplacement) => applySingleCorrection(id, customReplacement)}
+                        onApply={(id, customReplacement) =>
+                          applySingleCorrection(id, customReplacement)
+                        }
                         onIgnore={(id) => ignoreSingleCorrection(id)}
                         onAddToDictionary={(word) => addIgnoredWord(word)}
                       />

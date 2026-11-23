@@ -174,7 +174,9 @@ export const StepConfig: Component = () => {
             </label>
 
             <label class="flex flex-col gap-1.5">
-              <span class="text-xs font-medium text-foreground">{t("stepConfig.publishedYear")}</span>
+              <span class="text-xs font-medium text-foreground">
+                {t("stepConfig.publishedYear")}
+              </span>
               <input
                 type="text"
                 value={state.metadata.publishedYear || ""}
@@ -196,7 +198,9 @@ export const StepConfig: Component = () => {
             </label>
 
             <label class="flex flex-col gap-1.5 col-span-1 sm:col-span-2">
-              <span class="text-xs font-medium text-foreground">{t("stepConfig.copyrightNotice")}</span>
+              <span class="text-xs font-medium text-foreground">
+                {t("stepConfig.copyrightNotice")}
+              </span>
               <input
                 type="text"
                 value={state.metadata.copyrightNotice || ""}
@@ -312,7 +316,9 @@ export const StepConfig: Component = () => {
               <div class="flex items-center justify-between px-2.5 py-1.5 text-[11px] text-muted-foreground bg-muted/40 rounded-lg border border-border/60">
                 <span class="flex items-center gap-1.5 font-medium">
                   <Images class="w-3.5 h-3.5 text-primary" />
-                  <span>{t("stepConfig.availableDetectedCovers", { count: detectedCovers().length })}</span>
+                  <span>
+                    {t("stepConfig.availableDetectedCovers", { count: detectedCovers().length })}
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -339,7 +345,9 @@ export const StepConfig: Component = () => {
                   type="button"
                   onClick={() => setShowCoverGallery(true)}
                   class="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-background hover:bg-secondary text-foreground text-xs font-medium transition-colors cursor-pointer"
-                  title={t("stepConfig.selectFromDetectedTooltip", { count: detectedCovers().length })}
+                  title={t("stepConfig.selectFromDetectedTooltip", {
+                    count: detectedCovers().length,
+                  })}
                 >
                   <Images class="w-3.5 h-3.5 text-primary" />
                   <span>{t("stepConfig.detectedButton", { count: detectedCovers().length })}</span>

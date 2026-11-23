@@ -67,7 +67,8 @@ export const dict = {
     readerCustomizer: "Personalizador de lectura",
     openReaderSettings: "Abrir ajustes de lectura",
     noChapterLoadedTitle: "Ningún capítulo seleccionado o documento cargado.",
-    noChapterLoadedDesc: "Asegúrate de cargar un archivo PDF en \"Fuentes\" para previsualizar el formato.",
+    noChapterLoadedDesc:
+      'Asegúrate de cargar un archivo PDF en "Fuentes" para previsualizar el formato.',
     togglePaneView: "Alternar vista",
   },
   pdfViewer: {
@@ -298,8 +299,7 @@ export const dict = {
     detectedDialogueLabel: "Líneas de diálogo detectadas en el documento",
     noDialogueDetected: "No se detectaron líneas de diálogo en las secciones cargadas.",
     unifyQuotesTitle: "Unificar Comillas",
-    unifyQuotesDesc:
-      "Convierte comillas rectas y variantes en comillas tipográficas uniformes.",
+    unifyQuotesDesc: "Convierte comillas rectas y variantes en comillas tipográficas uniformes.",
     quotesSymbolLabel: "Comillas unificadas",
     detectedQuotesLabel: "Comillas detectadas en el documento",
     noQuotesDetected: "No se detectaron comillas en las secciones cargadas.",
@@ -579,8 +579,7 @@ export const dict = {
     clearConfirm: "¿Estás seguro de que deseas eliminar la copia guardada en este navegador?",
   },
   workspace: {
-    savedSessionFound:
-      "Se encontró una sesión previa guardada de \"{{ title }}\" ({{ time }}).",
+    savedSessionFound: 'Se encontró una sesión previa guardada de "{{ title }}" ({{ time }}).',
     restoringSession: "Restaurando...",
     restoreSession: "Restaurar sesión",
     dismiss: "Descartar",
@@ -648,8 +647,7 @@ export const dict = {
   faqPage: {
     badge: "Centro de Ayuda y Preguntas",
     title: "Preguntas Frecuentes",
-    desc:
-      "Todo lo que necesitas saber sobre el funcionamiento de EditNovel, la gestión de archivos y los estándares de publicación.",
+    desc: "Todo lo que necesitas saber sobre el funcionamiento de EditNovel, la gestión de archivos y los estándares de publicación.",
     ctaTitle: "¿Listo para probarlo?",
     ctaDesc:
       "Convierte y maqueta tus novelas ligeras con calidad editorial desde el primer instante.",

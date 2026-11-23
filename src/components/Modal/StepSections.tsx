@@ -154,9 +154,7 @@ export const StepSections: Component = () => {
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-sm font-medium text-foreground">{t("stepSections.title")}</h3>
-          <p class="text-xs text-muted-foreground mt-0.5">
-            {t("stepSections.subtitle")}
-          </p>
+          <p class="text-xs text-muted-foreground mt-0.5">{t("stepSections.subtitle")}</p>
         </div>
 
         <button
@@ -227,7 +225,9 @@ export const StepSections: Component = () => {
               <div class="p-4 rounded-xl border border-border bg-card/60 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <Loader2 class="w-4 h-4 animate-spin text-primary" />
-                  <span class="text-xs font-medium text-foreground">{t("stepFiles.parsingBackground")}</span>
+                  <span class="text-xs font-medium text-foreground">
+                    {t("stepFiles.parsingBackground")}
+                  </span>
                 </div>
               </div>
               <div class="space-y-2 pl-4">

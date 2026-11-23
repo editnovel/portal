@@ -1,11 +1,6 @@
 import { type Component, createSignal, For, Show } from "solid-js";
 import { t } from "~/lib/i18n";
-import {
-  detectedEllipses,
-  setUnifiedEllipsisSymbol,
-  setUnifyEllipsis,
-  state,
-} from "~/lib/store";
+import { detectedEllipses, setUnifiedEllipsisSymbol, setUnifyEllipsis, state } from "~/lib/store";
 
 const PRESET_ELLIPSES = ["……", "…", "...", "...…", "——"];
 
@@ -33,9 +28,7 @@ export const EllipsisRuleSection: Component = () => {
               {detectedEllipses().length}
             </span>
           </div>
-          <span class="text-[11px] text-muted-foreground">
-            {t("stepRules.unifyEllipsisDesc")}
-          </span>
+          <span class="text-[11px] text-muted-foreground">{t("stepRules.unifyEllipsisDesc")}</span>
         </div>
 
         <label class="relative inline-flex items-center cursor-pointer shrink-0">

@@ -17,7 +17,10 @@ export default function AboutPage(): JSX.Element {
         name="description"
         content="Conoce la visión de EditNovel: publicación de novelas ligeras de código abierto, privacidad total en WebAssembly y tipografía artesanal con Libron."
       />
-      <Meta property="og:title" content="Acerca de EditNovel — Publicación Digital de Código Abierto" />
+      <Meta
+        property="og:title"
+        content="Acerca de EditNovel — Publicación Digital de Código Abierto"
+      />
       <Meta
         property="og:description"
         content="Nuestra misión: brindar a traductores y artesanos editoriales una herramienta moderna, libre y 100% privada para crear libros digitales impecables."
@@ -26,7 +29,10 @@ export default function AboutPage(): JSX.Element {
       <Meta property="og:type" content="website" />
       <Meta property="og:image" content={`${siteUrl}/og-image.png`} />
       <Meta name="twitter:card" content="summary_large_image" />
-      <Meta name="twitter:title" content="Acerca de EditNovel — Publicación Digital de Código Abierto" />
+      <Meta
+        name="twitter:title"
+        content="Acerca de EditNovel — Publicación Digital de Código Abierto"
+      />
       <Meta
         name="twitter:description"
         content="Herramientas de publicación digital de código abierto y privacidad total en WebAssembly."
@@ -58,9 +64,7 @@ export default function AboutPage(): JSX.Element {
               <BookOpen class="w-5 h-5" />
             </div>
             <h2 class="text-base font-semibold text-foreground">{t("aboutPage.card1Title")}</h2>
-            <p class="text-xs text-muted-foreground leading-relaxed">
-              {t("aboutPage.card1Desc")}
-            </p>
+            <p class="text-xs text-muted-foreground leading-relaxed">{t("aboutPage.card1Desc")}</p>
           </article>
 
           <article class="p-6 rounded-2xl border border-border bg-card flex flex-col gap-3">
@@ -68,9 +72,7 @@ export default function AboutPage(): JSX.Element {
               <Lock class="w-5 h-5" />
             </div>
             <h2 class="text-base font-semibold text-foreground">{t("aboutPage.card2Title")}</h2>
-            <p class="text-xs text-muted-foreground leading-relaxed">
-              {t("aboutPage.card2Desc")}
-            </p>
+            <p class="text-xs text-muted-foreground leading-relaxed">{t("aboutPage.card2Desc")}</p>
           </article>
 
           <article class="p-6 rounded-2xl border border-border bg-card flex flex-col gap-3">
@@ -78,9 +80,7 @@ export default function AboutPage(): JSX.Element {
               <Terminal class="w-5 h-5" />
             </div>
             <h2 class="text-base font-semibold text-foreground">{t("aboutPage.card3Title")}</h2>
-            <p class="text-xs text-muted-foreground leading-relaxed">
-              {t("aboutPage.card3Desc")}
-            </p>
+            <p class="text-xs text-muted-foreground leading-relaxed">{t("aboutPage.card3Desc")}</p>
           </article>
         </section>
 
@@ -98,7 +98,9 @@ export default function AboutPage(): JSX.Element {
         </section>
 
         <section class="text-center flex flex-col items-center gap-6">
-          <h2 class="text-2xl font-bold tracking-tight text-foreground">{t("aboutPage.startTitle")}</h2>
+          <h2 class="text-2xl font-bold tracking-tight text-foreground">
+            {t("aboutPage.startTitle")}
+          </h2>
           <A
             href="/"
             class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm"

@@ -77,7 +77,10 @@ export default function HomePage(): JSX.Element {
         name="description"
         content="Convierte escaneos y PDFs en ediciones digitales EPUB 3 de calidad coleccionista con tipografía Libron, notas interactivas y motor WebAssembly 100% privado."
       />
-      <Meta property="og:title" content="EditNovel — Publicación Digital y Maquetación de Novelas" />
+      <Meta
+        property="og:title"
+        content="EditNovel — Publicación Digital y Maquetación de Novelas"
+      />
       <Meta
         property="og:description"
         content="Estudio editorial de código abierto para artesanos y traductores de novelas ligeras. Conversor de PDF a EPUB sin servidores."
@@ -86,7 +89,10 @@ export default function HomePage(): JSX.Element {
       <Meta property="og:type" content="website" />
       <Meta property="og:image" content={`${siteUrl}/og-image.png`} />
       <Meta name="twitter:card" content="summary_large_image" />
-      <Meta name="twitter:title" content="EditNovel — Publicación Digital y Maquetación de Novelas" />
+      <Meta
+        name="twitter:title"
+        content="EditNovel — Publicación Digital y Maquetación de Novelas"
+      />
       <Meta
         name="twitter:description"
         content="Estudio editorial de código abierto para artesanos y traductores de novelas ligeras."
@@ -131,8 +137,13 @@ export default function HomePage(): JSX.Element {
 
         <section id="features" class="flex flex-col gap-6">
           <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-bold tracking-tight text-foreground">{t("home.keyFeaturesTitle")}</h2>
-            <A href="/features" class="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1">
+            <h2 class="text-2xl font-bold tracking-tight text-foreground">
+              {t("home.keyFeaturesTitle")}
+            </h2>
+            <A
+              href="/features"
+              class="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1"
+            >
               <span>{t("home.exploreInDepth")}</span>
               <ArrowRight class="w-3.5 h-3.5" />
             </A>
@@ -152,7 +163,10 @@ export default function HomePage(): JSX.Element {
           </div>
         </section>
 
-        <section id="privacy" class="p-8 rounded-2xl border border-border bg-card/60 flex flex-col md:flex-row items-center justify-between gap-8">
+        <section
+          id="privacy"
+          class="p-8 rounded-2xl border border-border bg-card/60 flex flex-col md:flex-row items-center justify-between gap-8"
+        >
           <div class="flex flex-col gap-3 max-w-xl">
             <div class="flex items-center gap-2 text-primary font-semibold text-xs uppercase tracking-wider">
               <Lock class="w-4 h-4" />
@@ -183,7 +197,10 @@ export default function HomePage(): JSX.Element {
         <section id="faq" class="flex flex-col gap-6">
           <div class="flex items-center justify-between">
             <h2 class="text-2xl font-bold tracking-tight text-foreground">{t("home.faqTitle")}</h2>
-            <A href="/faq" class="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1">
+            <A
+              href="/faq"
+              class="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1"
+            >
               <span>{t("home.allFaqButton")}</span>
               <ArrowRight class="w-3.5 h-3.5" />
             </A>
@@ -202,7 +219,9 @@ export default function HomePage(): JSX.Element {
 
         <section id="attributions" class="flex flex-col gap-6">
           <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-bold tracking-tight text-foreground">{t("home.attributionsTitle")}</h2>
+            <h2 class="text-2xl font-bold tracking-tight text-foreground">
+              {t("home.attributionsTitle")}
+            </h2>
           </div>
           <div class="p-6 sm:p-8 rounded-2xl border border-border bg-card flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xs">
             <div class="flex flex-col gap-2 max-w-2xl">
@@ -213,9 +232,7 @@ export default function HomePage(): JSX.Element {
               <h3 class="text-xl font-bold tracking-tight text-foreground">
                 {t("home.libronTitle")}
               </h3>
-              <p class="text-sm text-muted-foreground leading-relaxed">
-                {t("home.libronDesc")}
-              </p>
+              <p class="text-sm text-muted-foreground leading-relaxed">{t("home.libronDesc")}</p>
             </div>
             <a
               href="https://github.com/nicoverbruggen/libron"

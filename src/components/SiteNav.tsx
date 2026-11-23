@@ -21,12 +21,17 @@ export const SiteNav: Component = () => {
           <span class="font-bold text-sm tracking-tight text-foreground">editnovel</span>
         </A>
 
-        <nav class="hidden md:flex items-center gap-4 text-xs font-medium" aria-label={t("nav.mainNavAria")}>
+        <nav
+          class="hidden md:flex items-center gap-4 text-xs font-medium"
+          aria-label={t("nav.mainNavAria")}
+        >
           {navLinks.map((link) => (
             <A
               href={link.href}
               class={`transition-colors hover:text-foreground ${
-                location.pathname === link.href ? "text-foreground font-semibold" : "text-muted-foreground"
+                location.pathname === link.href
+                  ? "text-foreground font-semibold"
+                  : "text-muted-foreground"
               }`}
             >
               {t(link.labelKey)}

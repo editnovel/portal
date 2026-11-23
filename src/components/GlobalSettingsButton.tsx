@@ -49,7 +49,9 @@ export const GlobalSettingsButton: Component = () => {
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <span class="text-[11px] font-semibold text-muted-foreground">{t("globalSettings.theme")}</span>
+            <span class="text-[11px] font-semibold text-muted-foreground">
+              {t("globalSettings.theme")}
+            </span>
             <div class="grid grid-cols-3 gap-1 p-1 rounded-lg border border-border bg-muted/20">
               <button
                 type="button"
@@ -93,7 +95,9 @@ export const GlobalSettingsButton: Component = () => {
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <span class="text-[11px] font-semibold text-muted-foreground">{t("globalSettings.language")}</span>
+            <span class="text-[11px] font-semibold text-muted-foreground">
+              {t("globalSettings.language")}
+            </span>
             <div class="grid grid-cols-2 gap-1 p-1 rounded-lg border border-border bg-muted/20">
               <For each={AVAILABLE_LOCALES}>
                 {(loc) => (

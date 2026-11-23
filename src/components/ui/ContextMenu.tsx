@@ -85,7 +85,10 @@ interface ContextMenuContentProps {
 const ContextMenuContent: Component<ContextMenuContentProps> = (props) => {
   let menuRef: HTMLDivElement | undefined;
   let toolbarRef: HTMLDivElement | undefined;
-  const [menuCoords, setMenuCoords] = createSignal<{ x: number; y: number }>({ x: props.x, y: props.y });
+  const [menuCoords, setMenuCoords] = createSignal<{ x: number; y: number }>({
+    x: props.x,
+    y: props.y,
+  });
   const [toolbarCoords, setToolbarCoords] = createSignal<{ x: number; y: number }>({
     x: props.x,
     y: Math.max(8, props.y - 44),
@@ -138,7 +141,10 @@ const ContextMenuContent: Component<ContextMenuContentProps> = (props) => {
 
       if (placeToolbarAbove) {
         if (rawY + menuRect.height > window.innerHeight - margin) {
-          mY = Math.max(margin + toolbarRect.height + gap, window.innerHeight - menuRect.height - margin);
+          mY = Math.max(
+            margin + toolbarRect.height + gap,
+            window.innerHeight - menuRect.height - margin
+          );
         } else {
           mY = rawY;
         }
@@ -281,7 +287,9 @@ export const ContextMenuItem: Component<ContextMenuItemProps> = (props) => {
 
 export const ContextMenuShortcut: ParentComponent<{ class?: string }> = (props) => {
   return (
-    <span class={`ml-auto text-[10px] tracking-widest text-muted-foreground opacity-60 ${props.class || ""}`}>
+    <span
+      class={`ml-auto text-[10px] tracking-widest text-muted-foreground opacity-60 ${props.class || ""}`}
+    >
       {props.children}
     </span>
   );
@@ -320,11 +328,7 @@ export const ContextMenuSub: ParentComponent = (props) => {
 
   return (
     <SubMenuContext.Provider value={{ isOpen, setIsOpen, triggerRect, setTriggerRect }}>
-      <div
-        class="relative"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
+      <div class="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         {props.children}
       </div>
     </SubMenuContext.Provider>

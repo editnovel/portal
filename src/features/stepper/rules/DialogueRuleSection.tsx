@@ -34,9 +34,7 @@ export const DialogueRuleSection: Component = () => {
               {detectedDialogueLines().length}
             </span>
           </div>
-          <span class="text-[11px] text-muted-foreground">
-            {t("stepRules.unifyDialogueDesc")}
-          </span>
+          <span class="text-[11px] text-muted-foreground">{t("stepRules.unifyDialogueDesc")}</span>
         </div>
 
         <label class="relative inline-flex items-center cursor-pointer shrink-0">

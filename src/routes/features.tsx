@@ -82,7 +82,10 @@ export default function FeaturesPage(): JSX.Element {
         name="description"
         content="Conoce las características de EditNovel: conversión de PDF a EPUB, editor WYSIWYG, tipografía Libron, notas al pie y motor WebAssembly offline."
       />
-      <Meta property="og:title" content="Características de EditNovel Studio — Publicación de Novelas Ligeras" />
+      <Meta
+        property="og:title"
+        content="Características de EditNovel Studio — Publicación de Novelas Ligeras"
+      />
       <Meta
         property="og:description"
         content="Herramientas profesionales para maquetar, editar y exportar novelas ligeras en EPUB 3 con tipografía de calidad coleccionista."

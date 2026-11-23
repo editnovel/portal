@@ -70,16 +70,12 @@ export const CorrectionCard: Component<CorrectionCardProps> = (props) => {
                   corr().category
                 )}`}
               />
-              <span class="font-semibold text-foreground">
-                {getCategoryLabel(corr().category)}
-              </span>
+              <span class="font-semibold text-foreground">{getCategoryLabel(corr().category)}</span>
             </div>
           </div>
 
           <div class="text-[11px] text-muted-foreground leading-relaxed pl-4 border-l-2 border-primary/40 font-serif">
-            <span class="text-muted-foreground/80 line-through mr-1">
-              {corr().originalToken}
-            </span>
+            <span class="text-muted-foreground/80 line-through mr-1">{corr().originalToken}</span>
             <span class="text-foreground font-semibold">{corr().replacementToken}</span>
             <Show when={corr().contextSnippet}>
               <p class="mt-1 text-[10px] text-muted-foreground/90 font-mono truncate">

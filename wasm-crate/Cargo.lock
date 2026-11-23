@@ -643,7 +643,7 @@ dependencies = [
 [[package]]
 name = "editnovel-engine"
 version = "0.1.0"
-source = "git+https://github.com/editnovel/engine?tag=v0.1.1#812038677efd0de94192b60291998e5b57f02593"
+source = "git+https://github.com/editnovel/engine?tag=v0.2.0#c8883c406cc1ff48385c816bd62bac690296a67d"
 dependencies = [
  "aho-corasick",
  "brotli",
@@ -655,6 +655,7 @@ dependencies = [
  "quick-xml",
  "rayon",
  "rc-zip",
+ "rc-zip-sync",
  "regex",
  "serde",
  "serde_json",
@@ -1628,11 +1629,23 @@ dependencies = [
  "chrono",
  "crc32fast",
  "encoding_rs",
+ "miniz_oxide 0.8.9",
  "oem_cp",
  "oval",
  "ownable",
  "tracing",
  "winnow",
+]
+
+[[package]]
+name = "rc-zip-sync"
+version = "4.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caa6adff915a3efce163d0d8a06d7e72ac6fa5a9da0c76e979895eca0c6ac000"
+dependencies = [
+ "oval",
+ "rc-zip",
+ "tracing",
 ]
 
 [[package]]

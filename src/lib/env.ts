@@ -1,9 +1,13 @@
 export function getSiteUrl(): string {
   const envUrl: string | null =
-    (typeof process !== "undefined" && process.env && typeof process.env.PUBLIC_SITE_URL === "string"
+    (typeof process !== "undefined" &&
+    process.env &&
+    typeof process.env.PUBLIC_SITE_URL === "string"
       ? process.env.PUBLIC_SITE_URL
       : null) ??
-    (typeof import.meta !== "undefined" && import.meta.env && typeof import.meta.env.PUBLIC_SITE_URL === "string"
+    (typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    typeof import.meta.env.PUBLIC_SITE_URL === "string"
       ? (import.meta.env.PUBLIC_SITE_URL as string)
       : null);
 

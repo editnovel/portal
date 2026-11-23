@@ -20,9 +20,7 @@ export default function NotFound(): JSX.Element {
         </div>
         <h1 class="text-5xl font-extrabold tracking-tight text-foreground">404</h1>
         <h2 class="text-xl font-semibold text-foreground">{t("notFound.heading")}</h2>
-        <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-          {t("notFound.desc")}
-        </p>
+        <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">{t("notFound.desc")}</p>
 
         <div class="flex items-center gap-3 pt-4">
           <A

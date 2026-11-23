@@ -7,9 +7,17 @@ import {
   UploadCloud,
   XCircle,
 } from "lucide-solid";
-import { type Component, createSignal, For, Show } from "solid-js";
+import { type Component, createSignal, For, onMount, Show } from "solid-js";
 import { t } from "~/lib/i18n";
-import { addFiles, removeFile, state, toggleFileActive } from "~/lib/store";
+import {
+  clearOcrModelCache,
+  getOcrCacheStatus,
+  getOcrManifest,
+  type OcrBannerStatus,
+  type OcrExecutionProvider,
+  OcrStatusCard,
+} from "~/lib/ocr";
+import { addFiles, removeFile, runOcrForFile, state, toggleFileActive } from "~/lib/store";
 
 function truncateMiddle(str: string, maxLength = 26): string {
   if (str.length <= maxLength) return str;
@@ -21,7 +29,66 @@ function truncateMiddle(str: string, maxLength = 26): string {
 
 export const StepFiles: Component = () => {
   const [isDragging, setIsDragging] = createSignal(false);
+  const [ocrStatus, setOcrStatus] = createSignal<OcrBannerStatus>("idle");
+  const [ocrProgress, setOcrProgress] = createSignal(0);
+  const [ocrPage, setOcrPage] = createSignal(0);
+  const [ocrTotalPages, setOcrTotalPages] = createSignal(0);
+  const [ocrProvider, setOcrProvider] = createSignal<OcrExecutionProvider | null>(null);
+  const [ocrCacheReady, setOcrCacheReady] = createSignal(false);
+  const [ocrError, setOcrError] = createSignal<string | null>(null);
+  const [dismissedOcrIds, setDismissedOcrIds] = createSignal<Record<string, boolean>>({});
   let fileInputRef: HTMLInputElement | undefined;
+
+  onMount(async () => {
+    try {
+      const status = await getOcrCacheStatus(getOcrManifest("ppocrv4-mobile"));
+      setOcrCacheReady(status.readyOffline);
+    } catch {}
+  });
+
+  const ocrCandidateFile = () =>
+    state.files.find(
+      (f) => f.needsOcr && (f.scannedPageNumbers?.length ?? 0) > 0 && !dismissedOcrIds()[f.id]
+    );
+
+  const handleRunOcr = async () => {
+    const target = ocrCandidateFile();
+    if (!target) return;
+    setOcrError(null);
+    setOcrStatus("downloading");
+    setOcrProgress(0);
+    setOcrTotalPages(target.scannedPageNumbers?.length ?? 0);
+
+    try {
+      await runOcrForFile(target.id, (p) => {
+        if (p.provider) setOcrProvider(p.provider);
+        if (p.phase === "downloading") {
+          setOcrStatus("downloading");
+          const total = p.download?.totalBytes ?? 0;
+          const loaded = p.download?.loadedBytes ?? 0;
+          setOcrProgress(total > 0 ? Math.round((loaded / total) * 100) : 0);
+        } else if (p.phase === "initializing") {
+          setOcrStatus("initializing");
+          setOcrCacheReady(true);
+        } else if (p.phase === "recognizing") {
+          setOcrStatus("recognizing");
+          setOcrPage(p.currentPage ?? 0);
+          setOcrTotalPages(p.totalPages ?? target.scannedPageNumbers?.length ?? 0);
+        } else if (p.phase === "done") {
+          setOcrStatus("ready");
+        }
+      });
+      setOcrStatus("ready");
+    } catch (err: unknown) {
+      setOcrStatus("error");
+      setOcrError(err instanceof Error ? err.message : "OCR processing failed");
+    }
+  };
+
+  const handleClearOcrCache = async () => {
+    await clearOcrModelCache("ppocrv4-mobile");
+    setOcrCacheReady(false);
+  };
 
   const handleDrop = async (e: DragEvent) => {
     e.preventDefault();
@@ -182,6 +249,25 @@ export const StepFiles: Component = () => {
           </div>
         </Show>
       </div>
+
+      <Show when={ocrCandidateFile()}>
+        {(candidate) => (
+          <OcrStatusCard
+            needsOcr={true}
+            scannedPageNumbers={candidate().scannedPageNumbers ?? []}
+            status={ocrStatus()}
+            progressPercent={ocrProgress()}
+            currentPage={ocrPage()}
+            totalPages={ocrTotalPages()}
+            provider={ocrProvider()}
+            cacheReady={ocrCacheReady()}
+            errorMessage={ocrError()}
+            onRunOcr={() => void handleRunOcr()}
+            onClearCache={() => void handleClearOcrCache()}
+            onDismiss={() => setDismissedOcrIds((prev) => ({ ...prev, [candidate().id]: true }))}
+          />
+        )}
+      </Show>
     </div>
   );
 };

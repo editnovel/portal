@@ -12,7 +12,15 @@ import {
   SlidersHorizontal,
   Trash2,
 } from "lucide-solid";
-import { type Component, For, Show, createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  For,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
 import { Portal } from "solid-js/web";
 import {
   ContextMenu,
@@ -360,10 +368,7 @@ const SectionRow: Component<SectionRowProps> = (props) => {
   };
 
   return (
-    <div
-      class="relative group"
-      onContextMenu={props.onContextMenu}
-    >
+    <div class="relative group" onContextMenu={props.onContextMenu}>
       <button
         type="button"
         onClick={() => {
@@ -383,9 +388,7 @@ const SectionRow: Component<SectionRowProps> = (props) => {
         }`}
       >
         <FileText class="w-3.5 h-3.5 shrink-0 opacity-70" />
-        <span class="font-mono text-[11px] opacity-70 shrink-0">
-          {props.secIdx + 1}.
-        </span>
+        <span class="font-mono text-[11px] opacity-70 shrink-0">{props.secIdx + 1}.</span>
 
         <Show
           when={props.isEditing}
@@ -447,10 +450,7 @@ const PartHeaderRow: Component<PartHeaderRowProps> = (props) => {
   };
 
   return (
-    <div
-      class="relative group"
-      onContextMenu={props.onContextMenu}
-    >
+    <div class="relative group" onContextMenu={props.onContextMenu}>
       <div class="px-2 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-between rounded hover:bg-muted/40 transition-colors">
         <Show
           when={props.isEditing}
@@ -524,11 +524,7 @@ export const ChapterSidebar: Component = () => {
     return grp.sections[grp.sections.length - 1].id === s.id;
   };
 
-  const handleSectionContextMenu = (
-    e: MouseEvent,
-    section: ChapterSection,
-    groupId: string
-  ) => {
+  const handleSectionContextMenu = (e: MouseEvent, section: ChapterSection, groupId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setActiveSlotId(null);
@@ -708,9 +704,7 @@ export const ChapterSidebar: Component = () => {
                             <span>{t("sidebar.noChaptersInPart")}</span>
                             <button
                               type="button"
-                              onClick={() =>
-                                addNewSection(group.fileId, null, "below", "chapter")
-                              }
+                              onClick={() => addNewSection(group.fileId, null, "below", "chapter")}
                               class="text-primary hover:underline text-[11px] font-medium cursor-pointer"
                             >
                               + {t("sidebar.addFirstChapter")}
@@ -747,8 +741,7 @@ export const ChapterSidebar: Component = () => {
 
                       <For each={group.sections}>
                         {(section, secIdx) => {
-                          const isLastSection = () =>
-                            secIdx() === group.sections.length - 1;
+                          const isLastSection = () => secIdx() === group.sections.length - 1;
                           return (
                             <>
                               <SectionRow
@@ -938,7 +931,8 @@ export const ChapterSidebar: Component = () => {
                     <ContextMenuItem
                       onClick={() => {
                         const g = contextMenu().group;
-                        if (g) addNewSection(g.fileId, g.sections[0]?.id || null, "above", "chapter");
+                        if (g)
+                          addNewSection(g.fileId, g.sections[0]?.id || null, "above", "chapter");
                       }}
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
@@ -947,7 +941,8 @@ export const ChapterSidebar: Component = () => {
                     <ContextMenuItem
                       onClick={() => {
                         const g = contextMenu().group;
-                        if (g) addNewSection(g.fileId, g.sections[0]?.id || null, "above", "prologue");
+                        if (g)
+                          addNewSection(g.fileId, g.sections[0]?.id || null, "above", "prologue");
                       }}
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
@@ -956,7 +951,8 @@ export const ChapterSidebar: Component = () => {
                     <ContextMenuItem
                       onClick={() => {
                         const g = contextMenu().group;
-                        if (g) addNewSection(g.fileId, g.sections[0]?.id || null, "above", "epilogue");
+                        if (g)
+                          addNewSection(g.fileId, g.sections[0]?.id || null, "above", "epilogue");
                       }}
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
@@ -965,7 +961,8 @@ export const ChapterSidebar: Component = () => {
                     <ContextMenuItem
                       onClick={() => {
                         const g = contextMenu().group;
-                        if (g) addNewSection(g.fileId, g.sections[0]?.id || null, "above", "afterword");
+                        if (g)
+                          addNewSection(g.fileId, g.sections[0]?.id || null, "above", "afterword");
                       }}
                     >
                       <span class="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
@@ -990,7 +987,7 @@ export const ChapterSidebar: Component = () => {
                 <ContextMenuSeparator />
                 <ContextMenuGroup>
                   <ContextMenuItem
-                    destructive
+                    destructive={true}
                     onClick={handleDeletePartFromMenu}
                     icon={<Trash2 class="w-3.5 h-3.5" />}
                   >
@@ -1091,7 +1088,7 @@ export const ChapterSidebar: Component = () => {
 
           <ContextMenuGroup>
             <ContextMenuItem
-              destructive
+              destructive={true}
               onClick={handleDeleteSectionFromMenu}
               icon={<Trash2 class="w-3.5 h-3.5" />}
             >

@@ -1,13 +1,6 @@
 import { A } from "@solidjs/router";
 import { ArrowUpDown, Download, Loader2, Save } from "lucide-solid";
-import {
-  type Component,
-  createEffect,
-  createSignal,
-  For,
-  onCleanup,
-  Show,
-} from "solid-js";
+import { type Component, createEffect, createSignal, For, onCleanup, Show } from "solid-js";
 import { t } from "~/lib/i18n";
 import {
   exportCurrentEpub,
@@ -104,7 +97,11 @@ export const TopActionBar: Component = () => {
 
   return (
     <header class="h-12 border-b border-border bg-card px-4 flex items-center justify-between relative z-20 shrink-0">
-      <A href="/home" class="flex items-center gap-2 hover:opacity-80 transition-opacity" title={t("topBar.logoTitle")}>
+      <A
+        href="/home"
+        class="flex items-center gap-2 hover:opacity-80 transition-opacity"
+        title={t("topBar.logoTitle")}
+      >
         <img src="/logo.png" alt="EditNovel logo" class="w-6 h-6 object-contain" />
         <span class="font-semibold text-sm tracking-tight text-foreground">
           {t("common.editnovel")}
@@ -149,8 +146,8 @@ export const TopActionBar: Component = () => {
                         breathing()
                           ? "w-1.5 h-1.5 bg-primary animate-breathing-blink"
                           : selected()
-                          ? "w-1.5 h-1.5 bg-primary scale-125"
-                          : "w-1.5 h-1.5 bg-muted-foreground/40"
+                            ? "w-1.5 h-1.5 bg-primary scale-125"
+                            : "w-1.5 h-1.5 bg-muted-foreground/40"
                       }`}
                     />
                   </Show>

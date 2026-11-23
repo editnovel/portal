@@ -1,4 +1,5 @@
 import type { ReaderSettings } from "./reader-settings";
+
 export type { ReaderSettings };
 
 export type ModalStepId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -48,6 +49,8 @@ export interface UploadedBookFile {
   imageCount: number;
   pdfBlobUrl?: string;
   rawFile?: File | Blob;
+  needsOcr?: boolean;
+  scannedPageNumbers?: number[];
 }
 
 export interface ChapterSection {

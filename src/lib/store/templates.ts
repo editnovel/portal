@@ -1,9 +1,4 @@
-import type {
-  EditorialRule,
-  FileSectionGroup,
-  GlossaryReplacement,
-  RegexRule,
-} from "../types";
+import type { EditorialRule, FileSectionGroup, GlossaryReplacement, RegexRule } from "../types";
 
 export const DEFAULT_INITIAL_SECTION_ID = "default-chapter-1";
 
@@ -35,9 +30,10 @@ export function createDefaultInitialGroup(): FileSectionGroup {
   };
 }
 
-export function getSectionTemplate(
-  type: "chapter" | "prologue" | "epilogue" | "afterword"
-): { title: string; html: string } {
+export function getSectionTemplate(type: "chapter" | "prologue" | "epilogue" | "afterword"): {
+  title: string;
+  html: string;
+} {
   if (type === "prologue") {
     return {
       title: "Prólogo",
