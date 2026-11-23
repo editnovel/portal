@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { OcrClient } from "~/lib/ocr/ocr-client";
 import {
   buildOcrPageInput,

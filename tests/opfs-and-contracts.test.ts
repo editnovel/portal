@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   clearOcrModelCache,
   ensureOcrModelsCached,
@@ -101,6 +101,8 @@ class MockMemoryDirHandle {
   }
 }
 
+const originalNavigatorStorageDescriptor = Object.getOwnPropertyDescriptor(navigator, "storage");
+
 function installMockOpfs(): MockMemoryDirHandle {
   const root = new MockMemoryDirHandle();
   Object.defineProperty(navigator, "storage", {
@@ -140,7 +142,12 @@ function makeTestManifest(): OcrModelManifest {
 
 describe("OPFS keys and worker contracts", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    if (originalNavigatorStorageDescriptor) {
+      Object.defineProperty(navigator, "storage", originalNavigatorStorageDescriptor);
+    } else {
+      Reflect.deleteProperty(navigator, "storage");
+    }
+    mock.restore();
   });
 
   it("defines distinct OPFS directory keys including ocrModels", () => {
@@ -233,7 +240,7 @@ describe("OPFS keys and worker contracts", () => {
       [manifest.assets.dict.url, new TextEncoder().encode("a\nb\nc\n")],
     ]);
 
-    const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
+    const mockFetch = mock(async (input: RequestInfo | URL) => {
       const url = String(input);
       const data = payloads.get(url);
       if (!data) {
@@ -263,7 +270,7 @@ describe("OPFS keys and worker contracts", () => {
     expect(statusBeforeClear.readyOffline).toBe(true);
     expect(statusBeforeClear.cachedKeys).toEqual(["det", "rec", "dict"]);
 
-    const offlineFetch = vi.fn(async () => {
+    const offlineFetch = mock(async () => {
       throw new Error("Network should not be called when cached offline");
     });
 
@@ -286,7 +293,7 @@ describe("OPFS keys and worker contracts", () => {
     installMockOpfs();
     const manifest = makeTestManifest();
 
-    const truncatedFetch = vi.fn(async () => {
+    const truncatedFetch = mock(async () => {
       const partial = new Uint8Array([1, 2]);
       return new Response(partial.buffer, {
         status: 200,
