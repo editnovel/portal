@@ -1,7 +1,11 @@
-import { createMemo } from "solid-js";
-import { type SetStoreFunction } from "solid-js/store";
+import { createMemo, createResource } from "solid-js";
+import type { SetStoreFunction } from "solid-js/store";
 import type { AppState, ChapterSection, FileSectionGroup } from "../../types";
-import { applyEditorialTransforms } from "../../wasm-bridge";
+import {
+  type TransformSectionRequest,
+  type TransformSectionResult,
+  wasmBridge,
+} from "../../wasm-bridge";
 import { getSectionTemplate } from "../templates";
 import { filterDiscardedImages } from "./files.slice";
 import { flashStepSpinner, touchProject } from "./ui.slice";
@@ -82,31 +86,36 @@ export function createSectionsSlice(state: AppState, setState: SetStoreFunction<
     const newId = `sec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const template = getSectionTemplate(sectionType);
 
-    setState("sectionGroups", (g) => g.fileId === groupId, "sections", (prevSections) => {
-      const list = [...prevSections];
-      const newSec: ChapterSection = {
-        id: newId,
-        fileId: groupId,
-        originalTitle: template.title,
-        title: template.title,
-        type: sectionType,
-        order: list.length + 1,
-        htmlContent: template.html,
-      };
-      if (!targetSectionId) {
-        if (position === "above") {
-          return [newSec, ...list];
+    setState(
+      "sectionGroups",
+      (g) => g.fileId === groupId,
+      "sections",
+      (prevSections) => {
+        const list = [...prevSections];
+        const newSec: ChapterSection = {
+          id: newId,
+          fileId: groupId,
+          originalTitle: template.title,
+          title: template.title,
+          type: sectionType,
+          order: list.length + 1,
+          htmlContent: template.html,
+        };
+        if (!targetSectionId) {
+          if (position === "above") {
+            return [newSec, ...list];
+          }
+          return [...list, newSec];
         }
-        return [...list, newSec];
+        const idx = list.findIndex((s) => s.id === targetSectionId);
+        if (idx === -1) {
+          return [...list, newSec];
+        }
+        const insertAt = position === "above" ? idx : idx + 1;
+        list.splice(insertAt, 0, newSec);
+        return list.map((s, i) => ({ ...s, order: i + 1 }));
       }
-      const idx = list.findIndex((s) => s.id === targetSectionId);
-      if (idx === -1) {
-        return [...list, newSec];
-      }
-      const insertAt = position === "above" ? idx : idx + 1;
-      list.splice(insertAt, 0, newSec);
-      return list.map((s, i) => ({ ...s, order: i + 1 }));
-    });
+    );
 
     setActiveSectionId(newId);
     touchProject();
@@ -213,29 +222,6 @@ export function createSectionsSlice(state: AppState, setState: SetStoreFunction<
     }
   }
 
-  const activeSection = createMemo<ChapterSection | null>(() => {
-    const currentId = state.activeSectionId;
-    if (!currentId) return null;
-
-    for (const group of state.sectionGroups) {
-      const sec = group.sections.find((s) => s.id === currentId);
-      if (sec) {
-        const filtered = filterDiscardedImages(sec.htmlContent, state.images);
-        const transformedContent = applyEditorialTransforms(
-          filtered,
-          state.editorialRules,
-          state.regexRules,
-          state.glossary
-        );
-        return {
-          ...sec,
-          htmlContent: transformedContent,
-        };
-      }
-    }
-    return null;
-  });
-
   const activeRawSection = createMemo<ChapterSection | null>(() => {
     const currentId = state.activeSectionId;
     if (!currentId) return null;
@@ -245,6 +231,99 @@ export function createSectionsSlice(state: AppState, setState: SetStoreFunction<
       if (sec) return sec;
     }
     return null;
+  });
+
+  let nextTransformRequestId = 0;
+
+  const transformRequestSource = createMemo<TransformSectionRequest | null>(() => {
+    const raw = activeRawSection();
+    if (!raw) return null;
+    const filteredHtml = filterDiscardedImages(raw.htmlContent, state.images);
+    const editorialRules = state.editorialRules.map((r) => ({
+      id: r.id,
+      label: r.label,
+      description: r.description,
+      enabled: r.enabled,
+      affectedCount: r.affectedCount,
+    }));
+    const regexRules = state.regexRules.map((r) => ({
+      id: r.id,
+      pattern: r.pattern,
+      replacement: r.replacement,
+      enabled: r.enabled,
+      flags: r.flags,
+      affectedCount: r.affectedCount,
+    }));
+    const glossary = state.glossary.map((g) => ({
+      id: g.id,
+      find: g.find,
+      replace: g.replace,
+      enabled: g.enabled,
+    }));
+    const requestId = ++nextTransformRequestId;
+    return {
+      requestId,
+      sectionId: raw.id,
+      html: filteredHtml,
+      editorialRules,
+      regexRules,
+      glossary,
+    };
+  });
+
+  const [transformedSectionResource] = createResource(
+    transformRequestSource,
+    async (req): Promise<TransformSectionResult> => {
+      try {
+        return await wasmBridge.transformSection(req);
+      } catch {
+        return {
+          requestId: req.requestId,
+          sectionId: req.sectionId,
+          html: req.html,
+          rulesSignature: "",
+        };
+      }
+    }
+  );
+
+  let lastResolvedForSection: TransformSectionResult | null = null;
+
+  const activeSection = createMemo<ChapterSection | null>(() => {
+    const raw = activeRawSection();
+    if (!raw) {
+      lastResolvedForSection = null;
+      return null;
+    }
+
+    const fallbackHtml = filterDiscardedImages(raw.htmlContent, state.images);
+    const resState = transformedSectionResource.state;
+    const latest =
+      resState === "ready" || resState === "refreshing"
+        ? transformedSectionResource.latest
+        : undefined;
+
+    if (latest && latest.sectionId === raw.id) {
+      if (
+        !lastResolvedForSection ||
+        lastResolvedForSection.sectionId !== raw.id ||
+        latest.requestId >= lastResolvedForSection.requestId
+      ) {
+        lastResolvedForSection = latest;
+      }
+    }
+
+    if (lastResolvedForSection && lastResolvedForSection.sectionId === raw.id) {
+      return {
+        ...raw,
+        htmlContent: lastResolvedForSection.html,
+      };
+    }
+
+    return {
+      ...raw,
+      htmlContent: fallbackHtml,
+    };
   });
 
   const activePdfBlobUrl = createMemo<string | null>(() => {

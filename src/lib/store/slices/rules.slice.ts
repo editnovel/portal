@@ -1,5 +1,5 @@
 import { createMemo } from "solid-js";
-import { type SetStoreFunction } from "solid-js/store";
+import type { SetStoreFunction } from "solid-js/store";
 import type {
   AppState,
   DetectedDialogueItem,
@@ -11,54 +11,136 @@ import type {
 } from "../../types";
 import { flashStepSpinner } from "./ui.slice";
 
-export function formatDialogueWithSymbol(cleanText: string, symbol: string): string {
+function getDialogueDelimiters(symbol: string): { open: string; close: string } {
   const trimmed = symbol.trim();
   const parts = trimmed.split(/\s+/);
   if (parts.length === 2) {
-    return `${parts[0]}${cleanText}${parts[1]}`;
+    return { open: parts[0], close: parts[1] };
   }
   if (trimmed === "「」" || trimmed === "「 」") {
-    return `「${cleanText}」`;
+    return { open: "「", close: "」" };
   }
   if (trimmed === "『』" || trimmed === "『 』") {
-    return `『${cleanText}』`;
+    return { open: "『", close: "』" };
   }
   if (trimmed === "«»" || trimmed === "« »") {
-    return `«${cleanText}»`;
+    return { open: "«", close: "»" };
   }
   if (trimmed === "“”" || trimmed === "“ ”") {
-    return `“${cleanText}”`;
+    return { open: "“", close: "”" };
   }
-  return `${trimmed} ${cleanText}`;
+  return { open: `${trimmed} `, close: "" };
+}
+
+export function formatDialogueWithSymbol(cleanText: string, symbol: string): string {
+  const { open, close } = getDialogueDelimiters(symbol);
+  return `${open}${cleanText}${close}`;
+}
+
+function collectEligibleTextNodes(doc: Document, root: Node): Text[] {
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (parent?.closest("code, pre, script, style")) {
+        return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const nodes: Text[] = [];
+  let current = walker.nextNode();
+  while (current) {
+    nodes.push(current as Text);
+    current = walker.nextNode();
+  }
+  return nodes;
 }
 
 export function applyDialogueUnification(html: string, symbol: string): string {
-  if (!html || !symbol) return html;
-  return html.replace(
-    /<p([^>]*)>\s*([—–\-]{1,2}\s*|[「『«“"])([\s\S]*?)<\/p>/gi,
-    (_match, attrs, _prefix, inner) => {
-      let clean = inner.trim();
-      clean = clean.replace(/[」』»”"]$/, "").trim();
-      const formatted = formatDialogueWithSymbol(clean, symbol);
-      return `<p${attrs}>${formatted}</p>`;
-    }
-  );
+  if (!html || !symbol || typeof DOMParser === "undefined") return html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const paragraphs = Array.from(doc.body.querySelectorAll("p"));
+  if (paragraphs.length === 0) return html;
+
+  const { open, close } = getDialogueDelimiters(symbol);
+  let mutated = false;
+
+  for (const p of paragraphs) {
+    if (p.closest("code, pre")) continue;
+    const textNodes = collectEligibleTextNodes(doc, p).filter(
+      (n) => (n.nodeValue || "").trim().length > 0
+    );
+    if (textNodes.length === 0) continue;
+
+    const firstNode = textNodes[0];
+    const firstVal = firstNode.nodeValue || "";
+    const leadMatch = firstVal.match(/^(\s*)([—–-]{1,2}\s*|[「『«“"])/);
+    if (!leadMatch) continue;
+
+    const strippedFirst = firstVal.slice(leadMatch[0].length);
+    firstNode.nodeValue = `${leadMatch[1]}${open}${strippedFirst}`;
+
+    const lastNode = textNodes[textNodes.length - 1];
+    const lastVal = lastNode.nodeValue || "";
+    const strippedLast = lastVal.replace(/[」』»”"](\s*)$/, "$1");
+    lastNode.nodeValue = close ? `${strippedLast.trimEnd()}${close}` : strippedLast;
+    mutated = true;
+  }
+
+  return mutated ? doc.body.innerHTML : html;
 }
 
 export function applyQuotesUnification(html: string, symbol: string): string {
-  if (!html || !symbol) return html;
+  if (!html || !symbol || typeof DOMParser === "undefined") return html;
   const parts = symbol.trim().split(/\s+/);
   const open = parts[0] || "«";
   const close = parts[1] || parts[0] || "»";
-  return html.replace(
-    /([>\s(\[])["“«「]([^"”»」]+)["”»」]/g,
-    `$1${open}$2${close}`
-  );
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const textNodes = collectEligibleTextNodes(doc, doc.body);
+  if (textNodes.length === 0) return html;
+
+  const quotePattern = /(^|[\s([—–-])["“«「]([^"”»」]+)["”»」]/g;
+  let mutated = false;
+
+  for (const node of textNodes) {
+    const val = node.nodeValue;
+    if (!val) continue;
+    quotePattern.lastIndex = 0;
+    if (quotePattern.test(val)) {
+      quotePattern.lastIndex = 0;
+      node.nodeValue = val.replace(quotePattern, `$1${open}$2${close}`);
+      mutated = true;
+    }
+  }
+
+  return mutated ? doc.body.innerHTML : html;
 }
 
 export function applyEllipsisUnification(html: string, symbol: string): string {
-  if (!html || !symbol) return html;
-  return html.replace(/(\.{3,}|…+)/g, symbol);
+  if (!html || !symbol || typeof DOMParser === "undefined") return html;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  const textNodes = collectEligibleTextNodes(doc, doc.body);
+  if (textNodes.length === 0) return html;
+
+  const ellipsisPattern = /(\.{3,}|…+)/g;
+  let mutated = false;
+
+  for (const node of textNodes) {
+    const val = node.nodeValue;
+    if (!val) continue;
+    ellipsisPattern.lastIndex = 0;
+    if (ellipsisPattern.test(val)) {
+      ellipsisPattern.lastIndex = 0;
+      node.nodeValue = val.replace(ellipsisPattern, symbol);
+      mutated = true;
+    }
+  }
+
+  return mutated ? doc.body.innerHTML : html;
 }
 
 export function createRulesSlice(state: AppState, setState: SetStoreFunction<AppState>) {
@@ -187,34 +269,46 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
     const quotes: DetectedQuoteItem[] = [];
     const ellipses: DetectedEllipsisItem[] = [];
 
-    if (!html) {
+    if (!html || typeof DOMParser === "undefined") {
       const empty = { html, breaks, dialogue, quotes, ellipses };
       sectionRulesCache.set(secId, empty);
       return empty;
     }
 
-    const breakRegex = /<(?:div|p)[^>]*class=["'][^"']*(?:scene-break|break)[^"']*["'][^>]*data-symbol=["']([^"']+)["'][^>]*>|<(?:div|p)[^>]*class=["'][^"']*(?:scene-break|break)[^"']*["'][^>]*>([\s\S]*?)<\/(?:div|p)>|<hr[^>]*class=["'][^"']*(?:scene-break|break)[^"']*["'][^>]*>/gi;
-    let bMatch: RegExpExecArray | null;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    const breakElements = Array.from(
+      doc.body.querySelectorAll(
+        "div.scene-break, div.break, p.scene-break, p.break, hr.scene-break, hr.break, [data-scene-break]"
+      )
+    );
     let bCount = 0;
-    while ((bMatch = breakRegex.exec(html)) !== null) {
+    for (const brEl of breakElements) {
       bCount++;
-      const sym = (bMatch[1] || bMatch[2] || "◆ ◇ ◆ ◇ ◆").replace(/<[^>]+>/g, "").trim();
-      const idx = bMatch.index;
-      const beforeHtml = html.slice(Math.max(0, idx - 150), idx).replace(/<[^>]+>/g, " ").trim();
-      const afterHtml = html.slice(idx + bMatch[0].length, idx + bMatch[0].length + 150).replace(/<[^>]+>/g, " ").trim();
+      const sym = (brEl.getAttribute("data-symbol") || brEl.textContent || "◆ ◇ ◆ ◇ ◆").trim();
+      const beforeText = (brEl.previousElementSibling?.textContent || "").trim();
+      const afterText = (brEl.nextElementSibling?.textContent || "").trim();
       breaks.push({
         id: `sb-${secId}-${bCount}`,
         sectionId: secId,
         sectionTitle: secTitle,
         fileId,
         symbol: sym || "◆ ◇ ◆ ◇ ◆",
-        snippetBefore: beforeHtml ? (beforeHtml.length > 70 ? "…" + beforeHtml.slice(-70) : beforeHtml) : "",
-        snippetAfter: afterHtml ? (afterHtml.length > 70 ? afterHtml.slice(0, 70) + "…" : afterHtml) : "",
+        snippetBefore: beforeText
+          ? beforeText.length > 70
+            ? `…${beforeText.slice(-70)}`
+            : beforeText
+          : "",
+        snippetAfter: afterText
+          ? afterText.length > 70
+            ? `${afterText.slice(0, 70)}…`
+            : afterText
+          : "",
       });
     }
 
-    const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi;
-    let pMatch: RegExpExecArray | null;
+    const paragraphElements = Array.from(doc.body.querySelectorAll("p"));
     let dCount = 0;
     let qCount = 0;
     let eCount = 0;
@@ -222,11 +316,22 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
     const quoteRe = /(?:(")([^"]+)(")|(“)([^”]+)(”)|(«)([^»]+)(»)|(「)([^」]+)(」))/g;
     const ellipsisRe = /(\.{3,}|…+)/g;
 
-    while ((pMatch = pRegex.exec(html)) !== null) {
-      const raw = pMatch[1].replace(/<[^>]+>/g, "").trim();
+    for (const pEl of paragraphElements) {
+      if (
+        pEl.closest("code, pre") ||
+        pEl.classList.contains("scene-break") ||
+        pEl.classList.contains("break")
+      ) {
+        continue;
+      }
+
+      const raw = collectEligibleTextNodes(doc, pEl)
+        .map((n) => n.nodeValue || "")
+        .join("")
+        .trim();
       if (!raw) continue;
 
-      const dMatch = raw.match(/^([—–\-]{1,2}\s*|[「『«“"])/);
+      const dMatch = raw.match(/^([—–-]{1,2}\s*|[「『«“"])/);
       if (dMatch) {
         dCount++;
         const prefix = dMatch[1];
@@ -239,13 +344,13 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
           fileId,
           originalPrefix: prefix.trim() || prefix,
           text: clean,
-          snippet: raw.length > 90 ? raw.slice(0, 90) + "…" : raw,
+          snippet: raw.length > 90 ? `${raw.slice(0, 90)}…` : raw,
         });
       }
 
       quoteRe.lastIndex = 0;
-      let qm: RegExpExecArray | null;
-      while ((qm = quoteRe.exec(raw)) !== null) {
+      let qm = quoteRe.exec(raw);
+      while (qm !== null) {
         qCount++;
         const open = qm[1] || qm[4] || qm[7] || qm[10] || '"';
         const text = qm[2] || qm[5] || qm[8] || qm[11] || "";
@@ -267,11 +372,12 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
           snippet,
         });
         if (qCount > 250) break;
+        qm = quoteRe.exec(raw);
       }
 
       ellipsisRe.lastIndex = 0;
-      let em: RegExpExecArray | null;
-      while ((em = ellipsisRe.exec(raw)) !== null) {
+      let em = ellipsisRe.exec(raw);
+      while (em !== null) {
         eCount++;
         const symbol = em[1];
         const startIdx = Math.max(0, em.index - 20);
@@ -289,6 +395,7 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
           snippet,
         });
         if (eCount > 250) break;
+        em = ellipsisRe.exec(raw);
       }
     }
 
@@ -303,7 +410,12 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
     for (const group of groups) {
       for (const sec of group.sections) {
         if (!sec.htmlContent) continue;
-        const data = extractSectionRules(sec.id, sec.title || sec.originalTitle || "Sección", sec.fileId, sec.htmlContent);
+        const data = extractSectionRules(
+          sec.id,
+          sec.title || sec.originalTitle || "Sección",
+          sec.fileId,
+          sec.htmlContent
+        );
         results.push(...data.breaks);
       }
     }
@@ -316,7 +428,12 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
     for (const group of groups) {
       for (const sec of group.sections) {
         if (!sec.htmlContent) continue;
-        const data = extractSectionRules(sec.id, sec.title || sec.originalTitle || "Sección", sec.fileId, sec.htmlContent);
+        const data = extractSectionRules(
+          sec.id,
+          sec.title || sec.originalTitle || "Sección",
+          sec.fileId,
+          sec.htmlContent
+        );
         results.push(...data.dialogue);
       }
     }
@@ -329,7 +446,12 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
     for (const group of groups) {
       for (const sec of group.sections) {
         if (!sec.htmlContent) continue;
-        const data = extractSectionRules(sec.id, sec.title || sec.originalTitle || "Sección", sec.fileId, sec.htmlContent);
+        const data = extractSectionRules(
+          sec.id,
+          sec.title || sec.originalTitle || "Sección",
+          sec.fileId,
+          sec.htmlContent
+        );
         results.push(...data.quotes);
       }
     }
@@ -342,7 +464,12 @@ export function createRulesSlice(state: AppState, setState: SetStoreFunction<App
     for (const group of groups) {
       for (const sec of group.sections) {
         if (!sec.htmlContent) continue;
-        const data = extractSectionRules(sec.id, sec.title || sec.originalTitle || "Sección", sec.fileId, sec.htmlContent);
+        const data = extractSectionRules(
+          sec.id,
+          sec.title || sec.originalTitle || "Sección",
+          sec.fileId,
+          sec.htmlContent
+        );
         results.push(...data.ellipses);
       }
     }

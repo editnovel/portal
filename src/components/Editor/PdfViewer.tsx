@@ -1,12 +1,4 @@
-import {
-  ArrowLeft,
-  ArrowRight,
-  Loader2,
-  Search,
-  SpellCheck2,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-solid";
+import { ArrowLeft, ArrowRight, Loader2, Search, ZoomIn, ZoomOut } from "lucide-solid";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
@@ -18,6 +10,7 @@ import {
   onMount,
   Show,
 } from "solid-js";
+import { SearchBar } from "~/components/ui/SearchBar";
 import { t } from "~/lib/i18n";
 import {
   buildChapterAnchors,
@@ -28,9 +21,8 @@ import {
   type SyncAnchor,
   type SyncCheckpoint,
 } from "~/lib/pdf-sync";
-import { activeSection, setRightPaneMode, state } from "~/lib/store";
+import { activeRawSection, state } from "~/lib/store";
 import { RightPaneSwitcher } from "./RightPaneSwitcher";
-import { SearchBar } from "~/components/ui/SearchBar";
 
 if (typeof window !== "undefined") {
   pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -82,14 +74,24 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
   const pageTextCache = new Map<number, string>();
   let searchAbortController: AbortController | null = null;
 
-  const getPageText = async (doc: pdfjsLib.PDFDocumentProxy, pageNumber: number): Promise<string> => {
+  const getPageText = async (
+    doc: pdfjsLib.PDFDocumentProxy,
+    pageNumber: number
+  ): Promise<string> => {
     if (pageTextCache.has(pageNumber)) {
       return pageTextCache.get(pageNumber)!;
     }
     const page = await doc.getPage(pageNumber);
     const content = await page.getTextContent();
     const str = content.items
-      .map((it: any) => it.str || "")
+      .map((it: unknown) =>
+        typeof it === "object" &&
+        it !== null &&
+        "str" in it &&
+        typeof (it as { str?: unknown }).str === "string"
+          ? (it as { str: string }).str
+          : ""
+      )
       .join(" ");
     pageTextCache.set(pageNumber, str);
     return str;
@@ -121,11 +123,11 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
         const text = await getPageText(pdfDoc, p);
         if (abort.signal.aborted) return;
         const target = caseSens ? text : text.toLowerCase();
-        let pos = 0;
+        let pos = target.indexOf(q, 0);
         let count = 0;
-        while ((pos = target.indexOf(q, pos)) !== -1) {
+        while (pos !== -1) {
           found.push({ pageNumber: p, matchIndex: count });
-          pos += q.length;
+          pos = target.indexOf(q, pos + q.length);
           count++;
         }
       }
@@ -177,7 +179,7 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
     const textNodes: Text[] = [];
     let curr = walker.nextNode();
     while (curr) {
-      if (curr.textContent && curr.textContent.trim()) {
+      if (curr.textContent?.trim()) {
         textNodes.push(curr as Text);
       }
       curr = walker.nextNode();
@@ -196,8 +198,7 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
           frag.appendChild(document.createTextNode(orig.slice(lastIdx, idx)));
         }
         const mark = document.createElement("mark");
-        const isCurrent =
-          currentMatchIndexOnPage !== null && currentMatchIndexOnPage === matchIdx;
+        const isCurrent = currentMatchIndexOnPage !== null && currentMatchIndexOnPage === matchIdx;
         mark.className = isCurrent
           ? "pdf-search-match pdf-search-match-current"
           : "pdf-search-match";
@@ -223,8 +224,7 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
     for (const [pNum, wrapEl] of renderedPages) {
       const textLayerDiv = wrapEl.querySelector(".textLayer");
       if (textLayerDiv instanceof HTMLElement) {
-        const curIdxOnPage =
-          curMatch && curMatch.pageNumber === pNum ? curMatch.matchIndex : null;
+        const curIdxOnPage = curMatch && curMatch.pageNumber === pNum ? curMatch.matchIndex : null;
         highlightTextLayer(textLayerDiv, q, caseSensitive(), curIdxOnPage, pNum);
       }
     }
@@ -236,7 +236,9 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
     const target = mList[idx];
     if (!scrollContainerRef) return;
 
-    const pageContainer = scrollContainerRef.querySelector(`[data-page-num="${target.pageNumber}"]`);
+    const pageContainer = scrollContainerRef.querySelector(
+      `[data-page-num="${target.pageNumber}"]`
+    );
     if (!(pageContainer instanceof HTMLDivElement)) return;
 
     if (!renderedPages.has(target.pageNumber)) {
@@ -251,7 +253,8 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
       if (mark instanceof HTMLElement) {
         const markRect = mark.getBoundingClientRect();
         const containerRect = scrollContainerRef.getBoundingClientRect();
-        const deltaY = markRect.top + markRect.height / 2 - (containerRect.top + containerRect.height / 2);
+        const deltaY =
+          markRect.top + markRect.height / 2 - (containerRect.top + containerRect.height / 2);
         scrollContainerRef.scrollTo({
           top: scrollContainerRef.scrollTop + deltaY,
           behavior: "smooth",
@@ -259,7 +262,8 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
       } else {
         const pageRect = pageContainer.getBoundingClientRect();
         const containerRect = scrollContainerRef.getBoundingClientRect();
-        const deltaY = pageRect.top + pageRect.height / 2 - (containerRect.top + containerRect.height / 2);
+        const deltaY =
+          pageRect.top + pageRect.height / 2 - (containerRect.top + containerRect.height / 2);
         scrollContainerRef.scrollTo({
           top: scrollContainerRef.scrollTop + deltaY,
           behavior: "smooth",
@@ -315,26 +319,6 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
     const next = !caseSensitive();
     setCaseSensitive(next);
     void performSearch(searchQuery(), next);
-  };
-
-  const handleSearchKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (e.shiftKey) {
-        goToPrevMatch();
-      } else {
-        goToNextMatch();
-      }
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      goToNextMatch();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      goToPrevMatch();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      closeSearch();
-    }
   };
 
   createEffect(() => {
@@ -443,7 +427,7 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
       canvas.className = "block";
 
       let renderedSuccessfully = false;
-      let textContent: any;
+      let textContent: Awaited<ReturnType<pdfjsLib.PDFPageProxy["getTextContent"]>> | null = null;
 
       if (typeof OffscreenCanvas !== "undefined") {
         try {
@@ -453,8 +437,8 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
             offCtx.scale(dpr, dpr);
             const [_, tc] = await Promise.all([
               page.render({
-                canvas: offscreen as any,
-                canvasContext: offCtx as any,
+                canvas: offscreen as unknown as HTMLCanvasElement,
+                canvasContext: offCtx as unknown as CanvasRenderingContext2D,
                 viewport,
               }).promise,
               page.getTextContent(),
@@ -496,7 +480,7 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
         }
       }
 
-      if (!renderedSuccessfully || scale() !== currentScale) {
+      if (!renderedSuccessfully || !textContent || scale() !== currentScale) {
         return;
       }
 
@@ -540,7 +524,7 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
 
   const updateCheckpoints = () => {
     if (!scrollContainerRef) return;
-    const sec = activeSection();
+    const sec = activeRawSection();
     const startP = sec?.startPage || 1;
     const endP = sec?.endPage || startP;
     const editorScroll = document.getElementById(
@@ -555,7 +539,7 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
 
   createEffect(() => {
     const doc = pdfDoc;
-    const sec = activeSection();
+    const sec = activeRawSection();
     if (!doc || !sec) {
       setAnchors([]);
       setCheckpoints([]);
@@ -843,11 +827,12 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
               <div
                 data-page-num={meta.pageNumber}
                 class={`relative transition-all flex items-center justify-center ${
-                  matches().length > 0 && matches()[currentMatchIdx()]?.pageNumber === meta.pageNumber
+                  matches().length > 0 &&
+                  matches()[currentMatchIdx()]?.pageNumber === meta.pageNumber
                     ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
                     : matches().some((m) => m.pageNumber === meta.pageNumber)
-                    ? "ring-2 ring-yellow-400/80"
-                    : ""
+                      ? "ring-2 ring-primary/60"
+                      : ""
                 }`}
                 style={{
                   width: `${Math.floor(meta.width * scale())}px`,
@@ -860,11 +845,9 @@ export const PdfViewer: Component<PdfViewerProps> = (props) => {
                 </div>
 
                 <Show when={matches().filter((m) => m.pageNumber === meta.pageNumber).length > 0}>
-                  <div class="absolute top-2 right-2 z-10 px-2 py-0.5 rounded text-[10px] font-semibold font-mono bg-yellow-400 text-black shadow-md flex items-center gap-1">
+                  <div class="absolute top-2 right-2 z-10 px-2 py-0.5 rounded text-[10px] font-semibold font-mono bg-primary text-primary-foreground shadow-md flex items-center gap-1">
                     <Search class="w-3 h-3" />
-                    <span>
-                      {matches().filter((m) => m.pageNumber === meta.pageNumber).length}
-                    </span>
+                    <span>{matches().filter((m) => m.pageNumber === meta.pageNumber).length}</span>
                   </div>
                 </Show>
               </div>

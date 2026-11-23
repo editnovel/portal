@@ -1,7 +1,8 @@
 import { Extension, Mark, mergeAttributes } from "@tiptap/core";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { Plugin, PluginKey, type Selection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import { activeSection, state } from "../../../lib/store";
+import { activeRawSection, state } from "../../../lib/store";
 
 export const SpellAppliedMark = Mark.create({
   name: "spellApplied",
@@ -41,14 +42,20 @@ function tokenToPattern(token: string): string {
   return `${startsWord ? "(?<![\\p{L}\\p{N}])" : ""}${esc}${endsWord ? "(?![\\p{L}\\p{N}])" : ""}`;
 }
 
-export function buildSpellDecorations(doc: any, selection?: any): DecorationSet {
-  const sec = activeSection();
+export function buildSpellDecorations(doc: ProseMirrorNode, selection?: Selection): DecorationSet {
+  const sec = activeRawSection();
   if (!sec) return DecorationSet.empty;
   const currentTitle = sec.title;
   const currentOrigTitle = sec.originalTitle;
   const currentId = sec.id;
 
-  const clean = (s?: string) => (s ? s.replace(/^\d+[\.\s\-\:]+/, "").trim().toLowerCase() : "");
+  const clean = (s?: string) =>
+    s
+      ? s
+          .replace(/^\d+[.\s\-:]+/, "")
+          .trim()
+          .toLowerCase()
+      : "";
   const curTitleClean = clean(currentTitle);
   const curOrigClean = clean(currentOrigTitle);
 
@@ -90,7 +97,7 @@ export function buildSpellDecorations(doc: any, selection?: any): DecorationSet 
   const activeBlockPositions = new Set<number>();
   const cursorPos = selection && selection.from === selection.to ? selection.from : -1;
 
-  doc.descendants((node: any, pos: number) => {
+  doc.descendants((node: ProseMirrorNode, pos: number) => {
     if (node.isBlock) {
       return true;
     }
@@ -98,11 +105,14 @@ export function buildSpellDecorations(doc: any, selection?: any): DecorationSet 
     const text = node.text;
 
     tokenRegex.lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = tokenRegex.exec(text)) !== null) {
+    let match = tokenRegex.exec(text);
+    while (match !== null) {
       const token = match[0];
       const candidates = tokenGroups.get(token);
-      if (!candidates || candidates.length === 0) continue;
+      if (!candidates || candidates.length === 0) {
+        match = tokenRegex.exec(text);
+        continue;
+      }
 
       const from = pos + match.index;
       const to = from + token.length;
@@ -153,6 +163,7 @@ export function buildSpellDecorations(doc: any, selection?: any): DecorationSet 
       }
 
       if (!isSelected && cursorPos >= from && cursorPos <= to) {
+        match = tokenRegex.exec(text);
         continue;
       }
 
@@ -198,6 +209,8 @@ export function buildSpellDecorations(doc: any, selection?: any): DecorationSet 
           }
         } catch {}
       }
+
+      match = tokenRegex.exec(text);
     }
   });
 
@@ -217,7 +230,7 @@ export const SpellCheckExtension = Extension.create({
           init(_, { doc }) {
             return buildSpellDecorations(doc);
           },
-          apply(tr, oldDecos, oldState, newState) {
+          apply(tr, oldDecos, _oldState, newState) {
             if (tr.docChanged || tr.selectionSet || tr.getMeta(spellPluginKey)) {
               return buildSpellDecorations(newState.doc, newState.selection);
             }
@@ -227,9 +240,7 @@ export const SpellCheckExtension = Extension.create({
         props: {
           decorations(state) {
             const decos = this.getState(state);
-            return decos && decos !== DecorationSet.empty && decos.find().length > 0
-              ? decos
-              : null;
+            return decos && decos !== DecorationSet.empty && decos.find().length > 0 ? decos : null;
           },
         },
       }),

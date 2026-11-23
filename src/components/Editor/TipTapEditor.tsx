@@ -1,9 +1,10 @@
 import { Editor } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
+import Placeholder from "@tiptap/extension-placeholder";
 import StarterKit from "@tiptap/starter-kit";
 import {
-  AlignCenter,
   ALargeSmall,
+  AlignCenter,
   Bold,
   BookMarked,
   BookOpen,
@@ -45,15 +46,14 @@ import {
   onMount,
   Show,
 } from "solid-js";
-import { SearchBar } from "~/components/ui/SearchBar";
 import {
   ContextMenu,
   ContextMenuGroup,
   ContextMenuItem,
   ContextMenuSeparator,
 } from "~/components/ui/ContextMenu";
+import { SearchBar } from "~/components/ui/SearchBar";
 import { UnifyBreakModal } from "~/features/editor/dialogs/UnifyBreakModal";
-import Placeholder from "@tiptap/extension-placeholder";
 import {
   CustomTextAlign,
   FindAndReplaceExtension,
@@ -66,16 +66,15 @@ import {
   SceneBreakNode,
   SpellAppliedMark,
   SpellCheckExtension,
-  spellPluginKey,
   SubscriptMark,
   SuperscriptMark,
+  spellPluginKey,
   UnderlineMark,
 } from "~/features/editor/extensions";
 import { t } from "~/lib/i18n";
 import { readerSettingsToCssVariables } from "~/lib/reader-settings";
 import {
   activeRawSection,
-  activeSection,
   addIgnoredWord,
   applySingleCorrection,
   correctionScrollTrigger,
@@ -94,6 +93,13 @@ import type { DynamicParagraphInput, SpellAuditOptions } from "~/lib/types";
 import { auditDynamicParagraphsInEngine } from "~/lib/wasm-bridge";
 
 const extractImageUrls = (html: string): string[] => {
+  if (!html) return [];
+  if (typeof DOMParser !== "undefined") {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return Array.from(doc.body.querySelectorAll("img"))
+      .map((img) => img.getAttribute("src") || "")
+      .filter(Boolean);
+  }
   const matches = html.matchAll(/<img[^>]+src=["']([^"']+)["']/g);
   const urls: string[] = [];
   for (const m of matches) {
@@ -142,7 +148,8 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
       if (el instanceof HTMLElement) {
         const markRect = el.getBoundingClientRect();
         const containerRect = scrollContainerRef.getBoundingClientRect();
-        const deltaY = markRect.top + markRect.height / 2 - (containerRect.top + containerRect.height / 2);
+        const deltaY =
+          markRect.top + markRect.height / 2 - (containerRect.top + containerRect.height / 2);
         isProgrammaticScroll = true;
         scrollContainerRef.scrollTo({
           top: scrollContainerRef.scrollTop + deltaY,
@@ -199,22 +206,6 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
     setEditorRevision((r) => r + 1);
     if (searchQuery().trim()) {
       scrollToCurrentSearchResult();
-    }
-  };
-
-  const handleSearchKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (e.shiftKey) {
-        editor?.commands.goToPreviousResult();
-      } else {
-        editor?.commands.goToNextResult();
-      }
-      setEditorRevision((r) => r + 1);
-      scrollToCurrentSearchResult();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      closeSearch();
     }
   };
 
@@ -323,9 +314,10 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
         handleKeyDown: (_view, event) => {
           if (event.altKey && (event.key === "n" || event.key === "N")) {
             event.preventDefault();
-            const currentTitle = activeSection()?.title;
+            const currentTitle = activeRawSection()?.title;
             const curCorrs = state.spellCorrections.filter(
-              (c) => !c.applied && !c.ignored && c.enabled !== false && c.sectionTitle === currentTitle
+              (c) =>
+                !c.applied && !c.ignored && c.enabled !== false && c.sectionTitle === currentTitle
             );
             if (curCorrs.length > 0) {
               const curIdx = curCorrs.findIndex((c) => c.id === state.selectedCorrectionId);
@@ -336,9 +328,10 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
           }
           if (event.altKey && (event.key === "p" || event.key === "P")) {
             event.preventDefault();
-            const currentTitle = activeSection()?.title;
+            const currentTitle = activeRawSection()?.title;
             const curCorrs = state.spellCorrections.filter(
-              (c) => !c.applied && !c.ignored && c.enabled !== false && c.sectionTitle === currentTitle
+              (c) =>
+                !c.applied && !c.ignored && c.enabled !== false && c.sectionTitle === currentTitle
             );
             if (curCorrs.length > 0) {
               const curIdx = curCorrs.findIndex((c) => c.id === state.selectedCorrectionId);
@@ -396,7 +389,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
         }
         spellDebounceTimer = window.setTimeout(async () => {
           spellDebounceTimer = null;
-          const currentSec = activeSection();
+          const currentSec = activeRawSection();
           if (!currentSec) return;
 
           const dirtyParagraphs: DynamicParagraphInput[] = [];
@@ -608,7 +601,12 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
     if (empty) {
       editor.chain().insertContent(refHtml).insertContentAt(targetPos, cardHtml).run();
     } else {
-      editor.chain().setTextSelection($to.pos).insertContent(refHtml).insertContentAt(targetPos, cardHtml).run();
+      editor
+        .chain()
+        .setTextSelection($to.pos)
+        .insertContent(refHtml)
+        .insertContentAt(targetPos, cardHtml)
+        .run();
     }
 
     if (prevScrollTop !== undefined && scrollContainerRef) {
@@ -674,8 +672,12 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
   const [scrollProgress, setScrollProgress] = createSignal(0);
 
   const wordCount = createMemo(() => {
-    const content = activeSection()?.htmlContent || "";
-    const clean = content.replace(/<[^>]*>/g, " ").trim();
+    const content = activeRawSection()?.htmlContent || "";
+    if (!content) return 0;
+    const clean =
+      typeof DOMParser !== "undefined"
+        ? (new DOMParser().parseFromString(content, "text/html").body.textContent || "").trim()
+        : content.replace(/<[^>]*>/g, " ").trim();
     if (!clean) return 0;
     return clean.split(/\s+/).length;
   });
@@ -761,8 +763,14 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
       const candidateCenterX = initialCenterX + deltaX;
       const candidateCenterY = initialCenterY + deltaY;
 
-      const clampedCenterX = Math.max(editorRect.left, Math.min(editorRect.right, candidateCenterX));
-      const clampedCenterY = Math.max(editorRect.top, Math.min(editorRect.bottom, candidateCenterY));
+      const clampedCenterX = Math.max(
+        editorRect.left,
+        Math.min(editorRect.right, candidateCenterX)
+      );
+      const clampedCenterY = Math.max(
+        editorRect.top,
+        Math.min(editorRect.bottom, candidateCenterY)
+      );
 
       setDragPos({ x: clampedCenterX, y: clampedCenterY });
     };
@@ -857,8 +865,8 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
           doc.descendants((node, pos) => {
             if (!node.isText || !node.text) return;
             regex.lastIndex = 0;
-            let match: RegExpExecArray | null;
-            while ((match = regex.exec(node.text)) !== null) {
+            let match = regex.exec(node.text);
+            while (match !== null) {
               const candidatePos = pos + match.index;
               let score = 1;
               try {
@@ -876,6 +884,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
                 foundPos = candidatePos;
                 if (score === 10) return false;
               }
+              match = regex.exec(node.text);
             }
           });
 
@@ -905,7 +914,10 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
       const deltaY = targetCenterY - containerCenterY;
 
       const maxScroll = container.scrollHeight - container.clientHeight;
-      const desiredScrollTop = Math.max(0, Math.min(maxScroll, Math.round(currentScrollTop + deltaY)));
+      const desiredScrollTop = Math.max(
+        0,
+        Math.min(maxScroll, Math.round(currentScrollTop + deltaY))
+      );
 
       isProgrammaticScroll = true;
       container.scrollTo({
@@ -927,7 +939,10 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
           const vDelta = vCenter - cCenter;
           if (Math.abs(vDelta) > 4) {
             const vMax = scrollContainerRef.scrollHeight - scrollContainerRef.clientHeight;
-            const finalScrollTop = Math.max(0, Math.min(vMax, Math.round(scrollContainerRef.scrollTop + vDelta)));
+            const finalScrollTop = Math.max(
+              0,
+              Math.min(vMax, Math.round(scrollContainerRef.scrollTop + vDelta))
+            );
             scrollContainerRef.scrollTo({
               top: finalScrollTop,
               behavior: "auto",
@@ -1019,9 +1034,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
         currentSymbol: symbol,
         newSymbol: symbol,
       });
-    } catch {
-      // Fallback
-    }
+    } catch {}
   };
 
   const handleSaveBreak = (symbol: string) => {
@@ -1039,9 +1052,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
           attrs: { symbol: trimmed },
         })
         .run();
-    } catch {
-      // Fallback
-    }
+    } catch {}
     setBreakDialog((prev) => ({ ...prev, isOpen: false }));
   };
 
@@ -1050,9 +1061,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
     if (!editor || !dialog.isOpen) return;
     try {
       editor.chain().focus().setNodeSelection(dialog.pos).deleteSelection().run();
-    } catch {
-      // Fallback
-    }
+    } catch {}
     setBreakDialog((prev) => ({ ...prev, isOpen: false }));
   };
 
@@ -1474,20 +1483,25 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
     <div
       class={`flex-1 flex flex-col h-full border-r overflow-hidden relative transition-colors duration-200 ${
         isSepia()
-          ? "bg-[#fbf0d9] border-[#ebd9b8] text-[#433422]"
+          ? "bg-[var(--reader-bg)] border-[var(--reader-border)] text-[var(--reader-text)]"
           : "bg-background border-border text-foreground"
       }`}
+      style={readerCssVarsString()}
     >
       <div
         ref={toolbarContainerRef}
         class={`border-b ${isSlimToolbar() ? "px-2" : "px-3"} flex items-center justify-between text-xs shrink-0 transition-all duration-200 ${
           isCompactToolbar() ? "py-1 min-h-[58px]" : "h-10"
         } ${
-          isSepia() ? "bg-[#f4e5c8] border-[#ebd9b8] text-[#433422]" : "border-border bg-card/60"
+          isSepia()
+            ? "bg-[var(--reader-card-bg)] border-[var(--reader-border)] text-[var(--reader-text)]"
+            : "border-border bg-card/60"
         }`}
       >
         <div class={`flex items-center ${isSlimToolbar() ? "gap-0.5" : "gap-1"}`}>
-          <div class={`flex ${isCompactToolbar() ? "flex-col gap-0.5" : "flex-row items-center gap-1"}`}>
+          <div
+            class={`flex ${isCompactToolbar() ? "flex-col gap-0.5" : "flex-row items-center gap-1"}`}
+          >
             <div class="flex items-center gap-1">
               <button
                 type="button"
@@ -1514,9 +1528,13 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
             </div>
           </div>
 
-          <div class={`${isCompactToolbar() ? "h-11" : "h-4"} w-px bg-border ${isSlimToolbar() ? "mx-0.5" : "mx-1"} self-center transition-all`} />
+          <div
+            class={`${isCompactToolbar() ? "h-11" : "h-4"} w-px bg-border ${isSlimToolbar() ? "mx-0.5" : "mx-1"} self-center transition-all`}
+          />
 
-          <div class={`flex ${isCompactToolbar() ? "flex-col gap-0.5" : "flex-row items-center gap-1"}`}>
+          <div
+            class={`flex ${isCompactToolbar() ? "flex-col gap-0.5" : "flex-row items-center gap-1"}`}
+          >
             <div class="flex items-center gap-1">
               <button
                 type="button"
@@ -1589,6 +1607,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
                   <div
                     class="absolute top-full left-0 mt-1 z-50 w-52 rounded-xl border border-border bg-popover/95 text-popover-foreground p-1 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 select-none text-xs"
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
                   >
                     <div class="flex flex-col gap-0.5">
                       <button
@@ -1654,9 +1673,13 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
             </div>
           </div>
 
-          <div class={`${isCompactToolbar() ? "h-11" : "h-4"} w-px bg-border ${isSlimToolbar() ? "mx-0.5" : "mx-1"} self-center transition-all`} />
+          <div
+            class={`${isCompactToolbar() ? "h-11" : "h-4"} w-px bg-border ${isSlimToolbar() ? "mx-0.5" : "mx-1"} self-center transition-all`}
+          />
 
-          <div class={`flex ${isCompactToolbar() ? "flex-col gap-0.5" : "flex-row items-center gap-1"}`}>
+          <div
+            class={`flex ${isCompactToolbar() ? "flex-col gap-0.5" : "flex-row items-center gap-1"}`}
+          >
             <div class="flex items-center gap-1">
               <button
                 type="button"
@@ -1687,9 +1710,13 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
             </div>
           </div>
 
-          <div class={`${isCompactToolbar() ? "h-11" : "h-4"} w-px bg-border ${isSlimToolbar() ? "mx-0.5" : "mx-1"} self-center transition-all`} />
+          <div
+            class={`${isCompactToolbar() ? "h-11" : "h-4"} w-px bg-border ${isSlimToolbar() ? "mx-0.5" : "mx-1"} self-center transition-all`}
+          />
 
-          <div class={`flex ${isCompactToolbar() ? "flex-col gap-0.5" : "flex-row items-center gap-1"}`}>
+          <div
+            class={`flex ${isCompactToolbar() ? "flex-col gap-0.5" : "flex-row items-center gap-1"}`}
+          >
             <div class="flex items-center gap-1">
               <button
                 type="button"
@@ -1721,7 +1748,9 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
           </div>
         </div>
 
-        <div class={`flex ${isCompactToolbar() ? "flex-col gap-0.5 items-end" : "flex-row items-center gap-1.5"}`}>
+        <div
+          class={`flex ${isCompactToolbar() ? "flex-col gap-0.5 items-end" : "flex-row items-center gap-1.5"}`}
+        >
           <div class="flex items-center gap-1.5">
             <Show when={state.isProcessing}>
               <span
@@ -1795,12 +1824,15 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
         onMouseOver={handleEditorMouseOver}
         onMouseOut={handleEditorMouseOut}
         onClick={handleEditorClick}
+        onKeyDown={() => {}}
         onDblClick={handleEditorDblClick}
         onContextMenu={handleEditorContextMenu}
         onFocus={() => {}}
         onBlur={() => {}}
         class={`flex-1 overflow-y-auto transition-colors duration-200 ${
-          isSepia() ? "bg-[#fbf0d9] text-[#433422] theme-sepia" : "bg-background text-foreground"
+          isSepia()
+            ? "bg-[var(--reader-bg)] text-[var(--reader-text)] theme-sepia"
+            : "bg-background text-foreground"
         }`}
         style={readerCssVarsString()}
       >
@@ -1808,7 +1840,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
           <style>{discardedImageStyles()}</style>
         </Show>
 
-        <Show when={!activeSection() && state.isProcessing}>
+        <Show when={!activeRawSection() && state.isProcessing}>
           <div class="flex flex-col items-center justify-center min-h-[50vh] p-8 text-center animate-pulse">
             <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">
               <BookOpen class="w-6 h-6 animate-pulse" />
@@ -1832,7 +1864,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
           role="presentation"
           spellcheck={false}
           class={`novel-container mx-auto transition-all duration-200 cursor-text ${
-            !activeSection() && state.isProcessing ? "hidden" : ""
+            !activeRawSection() && state.isProcessing ? "hidden" : ""
           }`}
           style={{
             "box-sizing": "border-box",
@@ -1853,7 +1885,9 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
       </div>
 
       <div class="h-8 border-t border-border bg-card px-4 flex items-center justify-between text-[11px] text-muted-foreground shrink-0">
-        <span class="truncate max-w-[280px]">{activeSection()?.title || state.metadata.title}</span>
+        <span class="truncate max-w-[280px]">
+          {activeRawSection()?.title || state.metadata.title}
+        </span>
         <div class="flex items-center gap-2 font-mono text-[11px]">
           <span>
             {wordCount()} {t("common.words")}
@@ -1937,12 +1971,12 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
                 {corr().category === "typo"
                   ? t("correctionPanel.typo")
                   : corr().category === "casing"
-                  ? t("correctionPanel.casing")
-                  : corr().category === "punctuation"
-                  ? t("correctionPanel.punctuation")
-                  : corr().category === "grammar"
-                  ? t("correctionPanel.grammar")
-                  : t("correctionPanel.style")}
+                    ? t("correctionPanel.casing")
+                    : corr().category === "punctuation"
+                      ? t("correctionPanel.punctuation")
+                      : corr().category === "grammar"
+                        ? t("correctionPanel.grammar")
+                        : t("correctionPanel.style")}
               </span>
               <span class="text-xs text-foreground">
                 {corr().contextSnippet
@@ -1958,7 +1992,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
                   <button
                     type="button"
                     onClick={() => applySingleCorrection(corr().id)}
-                    class="px-3.5 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs shadow-xs transition-colors cursor-pointer"
+                    class="px-3.5 py-1.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors cursor-pointer"
                   >
                     {corr().replacementToken}
                   </button>
@@ -1969,7 +2003,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
                     <button
                       type="button"
                       onClick={() => applySingleCorrection(corr().id, sugg)}
-                      class="px-3 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs shadow-xs transition-colors cursor-pointer"
+                      class="px-3 py-1.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs shadow-xs transition-colors cursor-pointer"
                     >
                       {sugg}
                     </button>
@@ -2118,6 +2152,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
                       isCaseDropdownUpwards() ? "bottom-full mb-1" : "top-full mt-1"
                     }`}
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
                   >
                     <div class="flex flex-col gap-0.5">
                       <button
@@ -2210,8 +2245,10 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
                 }}
                 class={`p-1.5 rounded transition-colors cursor-pointer shrink-0 ${
                   editorRevision() >= 0 &&
-                  (editor?.isActive("paragraph", { textAlign: "center" }) ||
-                    editor?.isActive("heading", { textAlign: "center" }))
+                  (
+                    editor?.isActive("paragraph", { textAlign: "center" }) ||
+                      editor?.isActive("heading", { textAlign: "center" })
+                  )
                     ? "bg-primary text-primary-foreground font-semibold shadow-xs"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
@@ -2288,7 +2325,11 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
             </div>
           ) : undefined
         }
-        class={sceneBreakContextTarget() ? "w-auto min-w-[150px] max-w-[200px]" : "w-auto min-w-[180px] max-w-[240px]"}
+        class={
+          sceneBreakContextTarget()
+            ? "w-auto min-w-[150px] max-w-[200px]"
+            : "w-auto min-w-[180px] max-w-[240px]"
+        }
       >
         <Show
           when={sceneBreakContextTarget()}
@@ -2322,7 +2363,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
                   icon={<Trash2 class="w-3.5 h-3.5" />}
                   onClick={handleDelete}
                   disabled={!hasSelection()}
-                  destructive
+                  destructive={true}
                   shortcut="Supr"
                 >
                   {t("common.delete")}
@@ -2353,7 +2394,7 @@ export const TipTapEditor: Component<TipTapEditorProps> = (props) => {
             <ContextMenuItem
               icon={<Trash2 class="w-3.5 h-3.5" />}
               onClick={handleDeleteSceneBreakFromContextMenu}
-              destructive
+              destructive={true}
             >
               {t("common.delete")}
             </ContextMenuItem>
