@@ -10,6 +10,7 @@ import {
   Loader2,
 } from "lucide-solid";
 import { type Component, createSignal, For, Show } from "solid-js";
+import { ENGINE_MANIFEST } from "~/generated/engine-contracts";
 import { type Locale, locale, t } from "~/lib/i18n";
 import { setPreset, setStep, state } from "~/lib/store";
 import type { LanguageProfile, PresetId } from "~/lib/types";
@@ -31,50 +32,52 @@ interface PresetCardConfig {
   icon: Component<{ class?: string }>;
 }
 
-const GENERAL_PRESET: PresetCardConfig = {
-  id: "generic",
-  titleKey: "stepPresets.genericTitle",
-  descKey: "stepPresets.genericDesc",
-  icon: FileText,
-};
-
-const SPECIALIZED_PRESETS: readonly PresetCardConfig[] = [
-  {
-    id: "visual-novel",
+const PRESET_UI_META: Record<PresetId, Omit<PresetCardConfig, "id">> = {
+  generic: {
+    titleKey: "stepPresets.genericTitle",
+    descKey: "stepPresets.genericDesc",
+    icon: FileText,
+  },
+  "visual-novel": {
     titleKey: "stepPresets.visualNovelTitle",
     descKey: "stepPresets.visualNovelDesc",
     icon: BookOpen,
   },
-  {
-    id: "webnovel",
+  webnovel: {
     titleKey: "stepPresets.webnovelTitle",
     descKey: "stepPresets.webnovelDesc",
     icon: Layers,
   },
-  {
-    id: "readme",
+  readme: {
     titleKey: "stepPresets.readmeTitle",
     descKey: "stepPresets.readmeDesc",
     icon: FileCode2,
   },
-  {
-    id: "paper",
+  paper: {
     titleKey: "stepPresets.paperTitle",
     descKey: "stepPresets.paperDesc",
     icon: GraduationCap,
   },
-];
+};
+
+const PRESET_CARDS: readonly PresetCardConfig[] = ENGINE_MANIFEST.presets.map((entry) => ({
+  id: entry.id,
+  ...PRESET_UI_META[entry.id],
+}));
+
+const GENERAL_PRESET: PresetCardConfig =
+  PRESET_CARDS.find((preset) => preset.id === "generic") ?? PRESET_CARDS[0];
+
+const SPECIALIZED_PRESETS: readonly PresetCardConfig[] = PRESET_CARDS.filter(
+  (preset) => preset.id !== "generic"
+);
 
 const LANGUAGE_PROFILE_STORAGE_KEY = "editnovel_language_profile";
 
-const LANGUAGE_OPTIONS: readonly {
-  id: LanguageProfile;
-  label: Record<Locale, string>;
-}[] = [
-  { id: "auto", label: { es: "Automático", en: "Auto" } },
-  { id: "es", label: { es: "Español", en: "Spanish" } },
-  { id: "en", label: { es: "Inglés", en: "English" } },
-];
+const LANGUAGE_OPTIONS = ENGINE_MANIFEST.languages.map((lang) => ({
+  id: lang.code,
+  label: lang.labels,
+}));
 
 const LANGUAGE_SECTION_LABEL: Record<Locale, string> = {
   es: "Perfil de idioma del documento",
@@ -89,10 +92,8 @@ const SELECTED_BADGE_LABEL: Record<Locale, string> = {
 export function getStoredLanguageProfile(): LanguageProfile {
   if (typeof window === "undefined") return "auto";
   const saved = localStorage.getItem(LANGUAGE_PROFILE_STORAGE_KEY);
-  if (saved === "auto" || saved === "es" || saved === "en") {
-    return saved;
-  }
-  return "auto";
+  const matched = ENGINE_MANIFEST.languages.find((lang) => lang.code === saved);
+  return matched ? matched.code : "auto";
 }
 
 export const StepPresets: Component = () => {

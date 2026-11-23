@@ -14,6 +14,16 @@ pub fn engine_version() -> String {
 }
 
 #[wasm_bindgen]
+pub fn engine_manifest_wasm() -> String {
+    editnovel_engine::engine_manifest_json()
+}
+
+#[wasm_bindgen]
+pub fn resolve_preset_id_wasm(raw: &str) -> Option<String> {
+    editnovel_engine::contracts::resolve_preset_id(raw).map(str::to_string)
+}
+
+#[wasm_bindgen]
 pub fn parse_book_file_wasm(bytes: &[u8], filename: &str) -> Result<String, JsValue> {
     editnovel_engine::parse_book_file_json(bytes, filename).map_err(|e| JsValue::from_str(&e))
 }

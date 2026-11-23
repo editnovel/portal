@@ -2,6 +2,8 @@
   "schemaVersion": 1,
   "name": "editnovel",
   "version": "0.1.0",
+  "engineVersion": "0.1.0",
+  "archiveSchemaVersion": 2,
   "description": "Local-first CLI and MCP Server for converting PDFs and EPUBs into clean EPUB 3 and omnibus volumes with staged JSON feedback loops.",
   "repository": "https://github.com/editnovel/editnovel",
   "skillsInstallCommand": "npx skills add editnovel/editnovel",

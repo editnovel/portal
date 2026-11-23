@@ -1,11 +1,10 @@
+import type { LanguageProfile, PresetId } from "~/generated/engine-contracts";
 import type { ReaderSettings } from "./reader-settings";
 
-export type { ReaderSettings };
+export type { LanguageProfile, PresetId, ReaderSettings };
 
 export type ModalStepId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 export type ModalDisplayMode = "expanded" | "docked";
-export type PresetId = "visual-novel" | "generic" | "webnovel" | "readme" | "paper";
-export type LanguageProfile = "auto" | "es" | "en";
 
 export interface ParseOptions {
   language: LanguageProfile;

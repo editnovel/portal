@@ -2,86 +2,30 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const __wbg_symspell_free: (a: number, b: number) => void;
-export const apply_editorial_transforms_wasm: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-  f: number,
-  g: number,
-  h: number,
-  i: number
-) => void;
+export const apply_editorial_transforms_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => void;
 export const audit_dynamic_paragraphs_wasm: (a: number, b: number, c: number) => void;
 export const audit_spelling_wasm: (a: number, b: number, c: number, d: number, e: number) => void;
 export const build_epub_wasm: (a: number, b: number, c: number) => void;
 export const clear_custom_cover_wasm: () => void;
 export const compress_brotli_wasm: (a: number, b: number, c: number) => void;
 export const decompress_brotli_wasm: (a: number, b: number, c: number) => void;
+export const engine_manifest_wasm: (a: number) => void;
 export const engine_version: (a: number) => void;
 export const get_image_bytes_wasm: (a: number, b: number, c: number, d: number, e: number) => void;
 export const init_dictionary_wasm: (a: number, b: number, c: number, d: number, e: number) => void;
 export const init_engine: () => void;
-export const inject_ocr_pages_wasm: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-  f: number,
-  g: number
-) => void;
+export const inject_ocr_pages_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
 export const parse_book_file_wasm: (a: number, b: number, c: number, d: number, e: number) => void;
-export const parse_book_file_with_options_wasm: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-  f: number,
-  g: number
-) => void;
+export const parse_book_file_with_options_wasm: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => void;
 export const remove_book_file_wasm: (a: number, b: number) => void;
-export const set_custom_cover_wasm: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-  f: number
-) => void;
-export const symspell_load_bigram_dictionary: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: any
-) => void;
+export const resolve_preset_id_wasm: (a: number, b: number, c: number) => void;
+export const set_custom_cover_wasm: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+export const symspell_load_bigram_dictionary: (a: number, b: number, c: number, d: number, e: any) => void;
 export const symspell_load_dictionary: (a: number, b: number, c: number, d: number, e: any) => void;
-export const symspell_lookup: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number,
-  f: number
-) => void;
-export const symspell_lookup_compound: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number
-) => void;
+export const symspell_lookup: (a: number, b: number, c: number, d: number, e: number, f: number) => void;
+export const symspell_lookup_compound: (a: number, b: number, c: number, d: number, e: number) => void;
 export const symspell_new: (a: number, b: any) => void;
-export const symspell_word_segmentation: (
-  a: number,
-  b: number,
-  c: number,
-  d: number,
-  e: number
-) => void;
+export const symspell_word_segmentation: (a: number, b: number, c: number, d: number, e: number) => void;
 export const transform_section_blocks_wasm: (a: number, b: number, c: number) => void;
 export const qcms_profile_precache_output_transform: (a: number) => void;
 export const lut_inverse_interp16: (a: number, b: number, c: number) => number;
@@ -89,26 +33,11 @@ export const lut_interp_linear16: (a: number, b: number, c: number) => number;
 export const qcms_enable_iccv4: () => void;
 export const qcms_profile_is_bogus: (a: number) => number;
 export const qcms_transform_data_bgra_out_lut: (a: number, b: number, c: number, d: number) => void;
-export const qcms_transform_data_bgra_out_lut_precache: (
-  a: number,
-  b: number,
-  c: number,
-  d: number
-) => void;
+export const qcms_transform_data_bgra_out_lut_precache: (a: number, b: number, c: number, d: number) => void;
 export const qcms_transform_data_rgb_out_lut: (a: number, b: number, c: number, d: number) => void;
-export const qcms_transform_data_rgb_out_lut_precache: (
-  a: number,
-  b: number,
-  c: number,
-  d: number
-) => void;
+export const qcms_transform_data_rgb_out_lut_precache: (a: number, b: number, c: number, d: number) => void;
 export const qcms_transform_data_rgba_out_lut: (a: number, b: number, c: number, d: number) => void;
-export const qcms_transform_data_rgba_out_lut_precache: (
-  a: number,
-  b: number,
-  c: number,
-  d: number
-) => void;
+export const qcms_transform_data_rgba_out_lut_precache: (a: number, b: number, c: number, d: number) => void;
 export const qcms_transform_release: (a: number) => void;
 export const qcms_white_point_sRGB: (a: number) => void;
 export const __wbindgen_export: (a: number, b: number) => number;

@@ -1,4 +1,5 @@
 import cliManifest from "~/generated/cli-manifest.json";
+import { ENGINE_MANIFEST } from "~/generated/engine-contracts";
 import { getSiteUrl } from "~/lib/env";
 
 interface CliArg {
@@ -90,6 +91,12 @@ ${mcpToolLines}
 ## Canonical Agent Workflow (\`SKILL.md\`)
 
 ${cliManifest.skillMarkdown}
+
+## Engine & Portable Archive (\`.editnovel\` v${ENGINE_MANIFEST.archiveSchemaVersion})
+
+- Engine Version: \`v${ENGINE_MANIFEST.engineVersion}\`
+- Web Presets: ${ENGINE_MANIFEST.presets.map((p) => `\`${p.id}\``).join(", ")}
+- Dictionaries: ${ENGINE_MANIFEST.dictionaries.map((d) => `\`${d.brFileName}\``).join(", ")}
 
 ## Optional Visual Web Inspector
 

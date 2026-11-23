@@ -1,4 +1,5 @@
 import * as Comlink from "comlink";
+import { type DictionaryAsset, ENGINE_MANIFEST } from "../generated/engine-contracts";
 import { OPFS_DIRS } from "./opfs-keys";
 import type {
   DynamicAuditRequest,
@@ -22,6 +23,7 @@ interface WasmEngineModule {
   initThreadPool?: (numThreads: number) => Promise<void>;
   init_thread_pool?: (numThreads: number) => Promise<void>;
   init_engine: () => void;
+  engine_manifest_wasm?: () => string;
   init_dictionary_wasm?: (lang: string, bytes: Uint8Array) => void;
   parse_book_file_wasm: (bytes: Uint8Array, filename: string) => string;
   parse_book_file_with_options_wasm?: (
@@ -213,25 +215,30 @@ function decodeDictionaryBytes(mod: WasmEngineModule, rawBytes: Uint8Array): Uin
   return rawBytes;
 }
 
-const DICTIONARY_SOURCES: ReadonlyArray<{
-  lang: "es" | "en" | "ja";
-  cacheName: string;
-  url: string;
-}> = [
-  { lang: "es", cacheName: "es_frequency.txt", url: "/dicts/es_frequency.txt.br" },
-  { lang: "en", cacheName: "en_frequency.txt", url: "/dicts/en_frequency.txt.br" },
-  { lang: "ja", cacheName: "ja_romaji_common.tsv", url: "/dicts/ja_romaji_common.tsv.br" },
-];
+function getDictionarySources(mod: WasmEngineModule): readonly DictionaryAsset[] {
+  if (typeof mod.engine_manifest_wasm === "function") {
+    try {
+      const parsed = JSON.parse(mod.engine_manifest_wasm()) as {
+        dictionaries?: DictionaryAsset[];
+      };
+      if (Array.isArray(parsed.dictionaries) && parsed.dictionaries.length > 0) {
+        return parsed.dictionaries;
+      }
+    } catch {}
+  }
+  return ENGINE_MANIFEST.dictionaries;
+}
 
 async function ensureDictionariesLoaded(): Promise<void> {
   const mod = await ensureWasmInitialized();
   if (typeof mod.init_dictionary_wasm !== "function") {
     return;
   }
+  const sources = getDictionarySources(mod);
   if (!dictionariesPromise) {
     dictionariesPromise = (async () => {
       await Promise.all(
-        DICTIONARY_SOURCES.map(async (entry) => {
+        sources.map(async (entry) => {
           try {
             const cached = await readDictFromOpfs(entry.cacheName);
             if (cached && cached.byteLength > 0) {
@@ -303,7 +310,7 @@ const workerApi: EditNovelWorkerApi = {
     const mod = await ensureWasmInitialized();
     const decoded = decodeDictionaryBytes(mod, bytes);
     mod.init_dictionary_wasm?.(lang, decoded);
-    const entry = DICTIONARY_SOURCES.find((d) => d.lang === lang);
+    const entry = getDictionarySources(mod).find((d) => d.lang === lang);
     if (entry) {
       await writeDictToOpfs(entry.cacheName, decoded);
     }

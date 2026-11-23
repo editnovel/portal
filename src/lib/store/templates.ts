@@ -1,3 +1,4 @@
+import { ENGINE_MANIFEST } from "~/generated/engine-contracts";
 import type { EditorialRule, FileSectionGroup, GlossaryReplacement, RegexRule } from "../types";
 
 export const DEFAULT_INITIAL_SECTION_ID = "default-chapter-1";
@@ -66,45 +67,9 @@ export function getSectionTemplate(type: "chapter" | "prologue" | "epilogue" | "
   };
 }
 
-export const INITIAL_EDITORIAL_RULES: EditorialRule[] = [
-  {
-    id: "rule-dialogue-dashes",
-    label: "Standardize Dialogue Em-Dashes",
-    description:
-      "Replaces double hyphens and standard dashes in spoken lines with typographic em-dashes (—).",
-    enabled: true,
-    affectedCount: 0,
-  },
-  {
-    id: "rule-curly-quotes",
-    label: "Smart Curly Quotes & Brackets",
-    description:
-      "Transforms straight quotation marks and angle brackets into curved or guillemet quotes (« » / “ ”).",
-    enabled: true,
-    affectedCount: 0,
-  },
-  {
-    id: "rule-ellipsis",
-    label: "Typographic Ellipses",
-    description: "Substitutes three dots (...) with a single horizontal ellipsis glyph (…).",
-    enabled: true,
-    affectedCount: 0,
-  },
-  {
-    id: "rule-clean-breaks",
-    label: "Consolidate Multiple Blank Lines & Breaks",
-    description: "Removes unnecessary blank lines and preserves deliberate scene transitions.",
-    enabled: true,
-    affectedCount: 0,
-  },
-  {
-    id: "rule-strip-headers",
-    label: "Strip Running Headers, Page Numbers & OCR Fixes",
-    description: "Strips repeated PDF page markers and applies contextual spell/OCR corrections.",
-    enabled: true,
-    affectedCount: 0,
-  },
-];
+export const INITIAL_EDITORIAL_RULES: EditorialRule[] = ENGINE_MANIFEST.defaultEditorialRules.map(
+  (rule) => ({ ...rule })
+);
 
 export const INITIAL_REGEX_RULES: RegexRule[] = [];
 export const INITIAL_GLOSSARY: GlossaryReplacement[] = [];

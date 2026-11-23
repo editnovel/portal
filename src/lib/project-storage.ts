@@ -10,6 +10,16 @@ import {
   ZipPassThrough,
 } from "fflate";
 import { unwrap } from "solid-js/store";
+import {
+  type EditNovelV2EditorialRules,
+  type EditNovelV2Manifest,
+  type EditNovelV2SourceEntry,
+  ENGINE_MANIFEST,
+  type EditNovelV2MediaItem as EngineV2MediaItem,
+  type EditNovelV2Tree as EngineV2Tree,
+  type EditNovelV2TreeGroup as EngineV2TreeGroup,
+  type EditNovelV2TreeSection as EngineV2TreeSection,
+} from "~/generated/engine-contracts";
 import { compressBrotli, decompressBrotli, decompressToString, isGzipBytes } from "./compression";
 import { OPFS_DIRS } from "./opfs-keys";
 import {
@@ -108,96 +118,18 @@ export interface ExportProjectOptions {
   includeSources?: boolean;
 }
 
-interface EditNovelV2SourceEntry {
-  id: string;
-  name: string;
-  size: number;
-  extension: "pdf" | "epub";
-  active: boolean;
-  sectionCount: number;
-  imageCount: number;
-  path?: string;
-}
+type PortalV2SourceEntry = EditNovelV2SourceEntry & {
+  size?: number;
+};
 
-interface EditNovelV2Manifest {
-  format: "editnovel";
-  version: 2;
-  app: "editnovel";
-  createdAt: string;
-  timestamp: number;
-  createdBy: "human" | "agent" | "hybrid";
-  profile: string;
-  metadata: BookMetadata;
-  provenance: {
-    sourceApp: string;
-    exportedAt: string;
-  };
-  validationReport: {
-    valid: boolean;
-    warnings: string[];
-    errors: string[];
-  };
-  sources: EditNovelV2SourceEntry[];
-}
+type PortalV2Manifest = Omit<EditNovelV2Manifest<BookMetadata>, "sources"> & {
+  sources: PortalV2SourceEntry[];
+};
 
-interface EditNovelV2TreeSection {
-  id: string;
-  fileId: string;
-  originalTitle: string;
-  title: string;
-  type: ChapterSection["type"];
-  order: number;
-  startPage?: number;
-  endPage?: number;
-  path: string;
-}
-
-interface EditNovelV2TreeGroup {
-  fileId: string;
-  fileName: string;
-  collapsed: boolean;
-  sections: EditNovelV2TreeSection[];
-}
-
-interface EditNovelV2Tree {
-  groups: EditNovelV2TreeGroup[];
-}
-
-interface EditNovelV2MediaItem {
-  id: string;
-  fileId: string;
-  name: string;
-  path: string;
-  mimeType: string;
-  resolution: string;
-  isDiscarded: boolean;
-  status: "keep" | "discard" | "uncertain";
-  type: ExtractedImage["type"];
-  reason?: string;
-  altText?: string;
-  decorative?: boolean;
-}
-
-interface EditNovelV2EditorialRules {
-  editorialRules: EditorialRule[];
-  regexRules: RegexRule[];
-  glossary: GlossaryReplacement[];
-  spellIgnoredWords: string[];
-  spellLanguageMode: "hybrid" | "es" | "en";
-  spellIgnoreJapanese: boolean;
-  spellIgnoreForeign: boolean;
-  spellIgnoreProperNouns: boolean;
-  unifyBreaks: boolean;
-  unifiedBreakSymbol: string;
-  unifyDialogue: boolean;
-  unifiedDialogueSymbol: string;
-  unifyQuotes: boolean;
-  unifiedQuoteSymbol: string;
-  unifyEllipsis: boolean;
-  unifiedEllipsisSymbol: string;
-  globalSpellEnabled?: boolean;
-  spellVolumeSettings?: Record<string, boolean>;
-}
+type EditNovelV2TreeSection = EngineV2TreeSection<ChapterSection["type"]>;
+type EditNovelV2TreeGroup = EngineV2TreeGroup<ChapterSection["type"]>;
+type EditNovelV2Tree = EngineV2Tree<ChapterSection["type"]>;
+type EditNovelV2MediaItem = EngineV2MediaItem<ExtractedImage["type"]>;
 
 interface EditNovelV2UiState {
   activeSectionId: string | null;
@@ -432,25 +364,8 @@ async function readZipJsonEntry<T>(
 }
 
 function mapProfileToPreset(profile: string | undefined): PresetId | undefined {
-  if (
-    profile === "visual-novel" ||
-    profile === "generic" ||
-    profile === "webnovel" ||
-    profile === "readme" ||
-    profile === "paper"
-  ) {
-    return profile;
-  }
-  if (profile === "en-light-novel" || profile === "es-editorial") {
-    return "visual-novel";
-  }
-  if (profile === "en-litrpg") {
-    return "webnovel";
-  }
-  if (profile === "en-fiction") {
-    return "generic";
-  }
-  return undefined;
+  if (!profile) return undefined;
+  return ENGINE_MANIFEST.presetAliases[profile.trim().toLowerCase()];
 }
 
 function normalizeSectionType(value: string | undefined): ChapterSection["type"] {
@@ -1119,7 +1034,7 @@ export async function exportProjectFile(options: ExportProjectOptions = {}): Pro
     };
     addDeflatedTextEntry(zip, "ui/state.json", JSON.stringify(uiStatePayload, null, 2));
 
-    const sourceEntries: EditNovelV2SourceEntry[] = [];
+    const sourceEntries: PortalV2SourceEntry[] = [];
     for (const fm of record.filesMeta) {
       let sourcePath: string | undefined;
       if (includeSources) {
@@ -1160,7 +1075,7 @@ export async function exportProjectFile(options: ExportProjectOptions = {}): Pro
     };
 
     const nowIso = new Date().toISOString();
-    const manifestPayload: EditNovelV2Manifest = {
+    const manifestPayload: PortalV2Manifest = {
       format: "editnovel",
       version: 2,
       app: "editnovel",
@@ -1233,7 +1148,7 @@ async function importLegacyJsonProject(text: string): Promise<boolean> {
 async function importV2ZipProject(file: File): Promise<boolean> {
   const entries = await extractZipEntries(file);
   const rawManifest = await readZipJsonEntry<
-    Partial<EditNovelV2Manifest> & {
+    Partial<PortalV2Manifest> & {
       title?: string;
       author?: string;
       language?: string;
@@ -1389,7 +1304,7 @@ async function importV2ZipProject(file: File): Promise<boolean> {
     filesMeta.push({
       id: src.id,
       name: src.name,
-      size: src.size,
+      size: src.size ?? 0,
       extension: src.extension === "epub" ? "epub" : "pdf",
       status: "ready",
       progress: 100,

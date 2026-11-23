@@ -1,0 +1,46 @@
+name: Sync Engine Contracts and Dicts
+
+on:
+  repository_dispatch:
+    types: [engine-updated]
+  workflow_dispatch:
+    inputs:
+      release_base_url:
+        description: Optional release base URL for engine assets
+        required: false
+
+jobs:
+  update-engine-contracts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Update generated engine contracts
+        env:
+          MANIFEST_B64: ${{ github.event.client_payload.manifest_b64 }}
+          TS_B64: ${{ github.event.client_payload.contracts_ts_b64 }}
+          INPUT_BASE: ${{ github.event.inputs.release_base_url }}
+        run: |
+          if [ -n "${MANIFEST_B64}" ] && [ -n "${TS_B64}" ]; then
+            printf '%s' "${MANIFEST_B64}" | base64 -d > src/generated/engine-manifest.json
+            printf '%s' "${TS_B64}" | base64 -d > src/generated/engine-contracts.ts
+          elif [ -n "${INPUT_BASE}" ]; then
+            EDITNOVEL_ENGINE_RELEASE_BASE="${INPUT_BASE}" bun run sync:engine
+          else
+            bun run sync:engine
+          fi
+      - name: Verify tests
+        run: |
+          bun install --frozen-lockfile
+          bun test
+      - name: Commit updated engine contracts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet src/generated/; then
+            git add src/generated/ public/dicts/
+            git commit -m "chore(portal): sync generated engine contracts and dicts"
+            git push
+          fi
