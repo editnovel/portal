@@ -1,0 +1,44 @@
+name: Sync CLI Manifest
+
+on:
+  repository_dispatch:
+    types: [editnovel-manifest-updated]
+  workflow_dispatch:
+    inputs:
+      manifest_url:
+        description: Optional remote cli-manifest.json URL
+        required: false
+
+jobs:
+  update-manifest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Write manifest from dispatch payload or remote
+        env:
+          DISPATCH_MANIFEST: ${{ toJson(github.event.client_payload.manifest) }}
+          INPUT_URL: ${{ github.event.inputs.manifest_url }}
+        run: |
+          if [ "${DISPATCH_MANIFEST}" != "null" ] && [ -n "${DISPATCH_MANIFEST}" ]; then
+            printf '%s\n' "${DISPATCH_MANIFEST}" | jq . > src/generated/cli-manifest.json
+          elif [ -n "${INPUT_URL}" ]; then
+            EDITNOVEL_MANIFEST_URL="${INPUT_URL}" bun run sync:cli
+          else
+            bun run sync:cli
+          fi
+      - name: Verify tests
+        run: |
+          bun install --frozen-lockfile
+          bun test
+      - name: Commit updated manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet src/generated/cli-manifest.json; then
+            git add src/generated/cli-manifest.json
+            git commit -m "chore(portal): sync cli-manifest.json from editnovel"
+            git push
+          fi

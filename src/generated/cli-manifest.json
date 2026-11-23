@@ -1,0 +1,919 @@
+{
+  "schemaVersion": 1,
+  "name": "editnovel",
+  "version": "0.1.0",
+  "description": "Local-first CLI and MCP Server for converting PDFs and EPUBs into clean EPUB 3 and omnibus volumes with staged JSON feedback loops.",
+  "repository": "https://github.com/editnovel/editnovel",
+  "skillsInstallCommand": "npx skills add editnovel/editnovel",
+  "mcpServerName": "editnovel",
+  "mcpConfig": {
+    "mcpServers": {
+      "editnovel": {
+        "args": [
+          "-y",
+          "editnovel",
+          "mcp"
+        ],
+        "command": "npx"
+      }
+    }
+  },
+  "supportedProfiles": [
+    "en-light-novel",
+    "en-litrpg",
+    "en-fiction",
+    "es-editorial"
+  ],
+  "supportedLangs": [
+    "auto",
+    "es",
+    "en"
+  ],
+  "commands": [
+    {
+      "path": [
+        "ingest"
+      ],
+      "name": "ingest",
+      "about": null,
+      "args": [
+        {
+          "id": "files",
+          "long": null,
+          "short": null,
+          "required": true,
+          "takesValue": true,
+          "defaultValues": [],
+          "help": null
+        },
+        {
+          "id": "workspace",
+          "long": "workspace",
+          "short": null,
+          "required": false,
+          "takesValue": true,
+          "defaultValues": [
+            "./work"
+          ],
+          "help": null
+        },
+        {
+          "id": "profile",
+          "long": "profile",
+          "short": null,
+          "required": false,
+          "takesValue": true,
+          "defaultValues": [
+            "en-light-novel"
+          ],
+          "help": null
+        },
+        {
+          "id": "lang",
+          "long": "lang",
+          "short": null,
+          "required": false,
+          "takesValue": true,
+          "defaultValues": [
+            "auto"
+          ],
+          "help": null
+        }
+      ],
+      "subcommands": []
+    },
+    {
+      "path": [
+        "inspect"
+      ],
+      "name": "inspect",
+      "about": null,
+      "args": [],
+      "subcommands": [
+        {
+          "path": [
+            "inspect",
+            "sections"
+          ],
+          "name": "sections",
+          "about": null,
+          "args": [
+            {
+              "id": "workspace",
+              "long": "workspace",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "./work"
+              ],
+              "help": null
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": [
+            "inspect",
+            "section"
+          ],
+          "name": "section",
+          "about": null,
+          "args": [
+            {
+              "id": "id",
+              "long": null,
+              "short": null,
+              "required": true,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "workspace",
+              "long": "workspace",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "./work"
+              ],
+              "help": null
+            },
+            {
+              "id": "head",
+              "long": "head",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "10"
+              ],
+              "help": null
+            },
+            {
+              "id": "tail",
+              "long": "tail",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "10"
+              ],
+              "help": null
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": [
+            "inspect",
+            "media"
+          ],
+          "name": "media",
+          "about": null,
+          "args": [
+            {
+              "id": "workspace",
+              "long": "workspace",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "./work"
+              ],
+              "help": null
+            },
+            {
+              "id": "filter",
+              "long": "filter",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "all"
+              ],
+              "help": null
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": [
+        "structure"
+      ],
+      "name": "structure",
+      "about": null,
+      "args": [],
+      "subcommands": [
+        {
+          "path": [
+            "structure",
+            "patch"
+          ],
+          "name": "patch",
+          "about": null,
+          "args": [
+            {
+              "id": "workspace",
+              "long": "workspace",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "./work"
+              ],
+              "help": null
+            },
+            {
+              "id": "merge",
+              "long": "merge",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "rename",
+              "long": "rename",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "retype",
+              "long": "retype",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "reorder",
+              "long": "reorder",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "dry_run",
+              "long": "dry-run",
+              "short": null,
+              "required": false,
+              "takesValue": false,
+              "defaultValues": [],
+              "help": null
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": [
+        "media"
+      ],
+      "name": "media",
+      "about": null,
+      "args": [],
+      "subcommands": [
+        {
+          "path": [
+            "media",
+            "update"
+          ],
+          "name": "update",
+          "about": null,
+          "args": [
+            {
+              "id": "workspace",
+              "long": "workspace",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "./work"
+              ],
+              "help": null
+            },
+            {
+              "id": "keep",
+              "long": "keep",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "discard",
+              "long": "discard",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "alt",
+              "long": "alt",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "decorative",
+              "long": "decorative",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "dry_run",
+              "long": "dry-run",
+              "short": null,
+              "required": false,
+              "takesValue": false,
+              "defaultValues": [],
+              "help": null
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": [
+        "audit"
+      ],
+      "name": "audit",
+      "about": null,
+      "args": [],
+      "subcommands": [
+        {
+          "path": [
+            "audit",
+            "text"
+          ],
+          "name": "text",
+          "about": null,
+          "args": [
+            {
+              "id": "workspace",
+              "long": "workspace",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "./work"
+              ],
+              "help": null
+            },
+            {
+              "id": "min_conf",
+              "long": "min-conf",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "0.75"
+              ],
+              "help": null
+            },
+            {
+              "id": "limit",
+              "long": "limit",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "50"
+              ],
+              "help": null
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": [
+        "glossary"
+      ],
+      "name": "glossary",
+      "about": null,
+      "args": [],
+      "subcommands": [
+        {
+          "path": [
+            "glossary",
+            "ignore"
+          ],
+          "name": "ignore",
+          "about": null,
+          "args": [
+            {
+              "id": "words",
+              "long": null,
+              "short": null,
+              "required": true,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "workspace",
+              "long": "workspace",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "./work"
+              ],
+              "help": null
+            },
+            {
+              "id": "apply_spell",
+              "long": "apply-spell",
+              "short": null,
+              "required": false,
+              "takesValue": false,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "min_conf",
+              "long": "min-conf",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "0.9"
+              ],
+              "help": null
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": [
+        "rules"
+      ],
+      "name": "rules",
+      "about": null,
+      "args": [],
+      "subcommands": [
+        {
+          "path": [
+            "rules",
+            "add"
+          ],
+          "name": "add",
+          "about": null,
+          "args": [
+            {
+              "id": "workspace",
+              "long": "workspace",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "./work"
+              ],
+              "help": null
+            },
+            {
+              "id": "find",
+              "long": "find",
+              "short": null,
+              "required": true,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "replace",
+              "long": "replace",
+              "short": null,
+              "required": true,
+              "takesValue": true,
+              "defaultValues": [],
+              "help": null
+            },
+            {
+              "id": "flags",
+              "long": "flags",
+              "short": null,
+              "required": false,
+              "takesValue": true,
+              "defaultValues": [
+                "g"
+              ],
+              "help": null
+            },
+            {
+              "id": "dry_run",
+              "long": "dry-run",
+              "short": null,
+              "required": false,
+              "takesValue": false,
+              "defaultValues": [],
+              "help": null
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": [
+        "build"
+      ],
+      "name": "build",
+      "about": null,
+      "args": [
+        {
+          "id": "workspace",
+          "long": "workspace",
+          "short": null,
+          "required": false,
+          "takesValue": true,
+          "defaultValues": [
+            "./work"
+          ],
+          "help": null
+        },
+        {
+          "id": "out",
+          "long": "out",
+          "short": null,
+          "required": true,
+          "takesValue": true,
+          "defaultValues": [],
+          "help": null
+        },
+        {
+          "id": "export_project",
+          "long": "export-project",
+          "short": null,
+          "required": false,
+          "takesValue": true,
+          "defaultValues": [],
+          "help": null
+        }
+      ],
+      "subcommands": []
+    },
+    {
+      "path": [
+        "verify"
+      ],
+      "name": "verify",
+      "about": null,
+      "args": [
+        {
+          "id": "epub_path",
+          "long": null,
+          "short": null,
+          "required": true,
+          "takesValue": true,
+          "defaultValues": [],
+          "help": null
+        }
+      ],
+      "subcommands": []
+    },
+    {
+      "path": [
+        "mcp"
+      ],
+      "name": "mcp",
+      "about": null,
+      "args": [],
+      "subcommands": []
+    }
+  ],
+  "mcpTools": [
+    {
+      "name": "editnovel_ingest",
+      "description": "Ingest PDF, EPUB, or .editnovel files into a local v2 workspace directory and return compact diagnostics.",
+      "inputSchema": {
+        "properties": {
+          "files": {
+            "description": "Input file paths (.pdf, .epub, or .editnovel)",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "lang": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "es",
+              "en"
+            ],
+            "type": "string"
+          },
+          "profile": {
+            "default": "en-light-novel",
+            "enum": [
+              "en-light-novel",
+              "en-litrpg",
+              "en-fiction",
+              "es-editorial"
+            ],
+            "type": "string"
+          },
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_inspect_sections",
+      "description": "List detected sections and chapters in the workspace with lightweight metadata and untitled flags.",
+      "inputSchema": {
+        "properties": {
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_inspect_section",
+      "description": "Inspect head and tail paragraph previews, footnotes, and images of a specific section by ID.",
+      "inputSchema": {
+        "properties": {
+          "head": {
+            "default": 10,
+            "type": "integer"
+          },
+          "id": {
+            "description": "Section identifier (e.g. s01)",
+            "type": "string"
+          },
+          "tail": {
+            "default": 10,
+            "type": "integer"
+          },
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_patch_structure",
+      "description": "Merge, rename, retype, or reorder sections in the workspace (supports dry_run).",
+      "inputSchema": {
+        "properties": {
+          "dry_run": {
+            "default": false,
+            "type": "boolean"
+          },
+          "merge": {
+            "description": "Comma-separated section ID pairs to merge (e.g. [\"s03,s04\"])",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "rename": {
+            "description": "Section renames in id=title format (e.g. [\"s02=Chapter 1\"])",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "reorder": {
+            "description": "Comma-separated section ID order",
+            "type": "string"
+          },
+          "retype": {
+            "description": "Section type overrides in id=type format",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_inspect_media",
+      "description": "Inspect extracted images and dHash filtering verdicts with local thumbnail paths.",
+      "inputSchema": {
+        "properties": {
+          "filter": {
+            "default": "all",
+            "description": "Filter by status: all, kept, discarded, uncertain, or comma-separated",
+            "type": "string"
+          },
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_update_media",
+      "description": "Keep or discard images, attach accessibility alt-text, or mark images as decorative.",
+      "inputSchema": {
+        "properties": {
+          "alt": {
+            "description": "Alt-text assignments in id=text format",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "decorative": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "discard": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "dry_run": {
+            "default": false,
+            "type": "boolean"
+          },
+          "keep": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_audit_text",
+      "description": "Return deduplicated contextual spelling and glossary clusters above min_conf.",
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "default": 50,
+            "type": "integer"
+          },
+          "min_conf": {
+            "default": 0.75,
+            "type": "number"
+          },
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_apply_rules",
+      "description": "Ignore proper nouns/glossary terms, apply high-confidence spell fixes, or add regex replacement rules.",
+      "inputSchema": {
+        "properties": {
+          "apply_spell": {
+            "default": false,
+            "type": "boolean"
+          },
+          "dry_run": {
+            "default": false,
+            "type": "boolean"
+          },
+          "find": {
+            "type": "string"
+          },
+          "flags": {
+            "default": "g",
+            "type": "string"
+          },
+          "ignore_words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "min_conf": {
+            "default": 0.9,
+            "type": "number"
+          },
+          "replace": {
+            "type": "string"
+          },
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_build_epub",
+      "description": "Build and validate the final EPUB 3 (or multi-volume omnibus) and optionally export a .editnovel v2 archive.",
+      "inputSchema": {
+        "properties": {
+          "export_project": {
+            "description": "Optional output .editnovel project archive path",
+            "type": "string"
+          },
+          "out": {
+            "description": "Output EPUB 3 file path",
+            "type": "string"
+          },
+          "workspace": {
+            "default": "./work",
+            "type": "string"
+          }
+        },
+        "required": [
+          "out"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "editnovel_verify_epub",
+      "description": "Verify an EPUB 3 file for OCF mimetype rules, XML/XHTML well-formedness, image references, and EPUB 3 metadata.",
+      "inputSchema": {
+        "properties": {
+          "epub_path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "epub_path"
+        ],
+        "type": "object"
+      }
+    }
+  ],
+  "skillMarkdown": "# EditNovel Agent Workflow\n\nUse EditNovel's staged local CLI (or `editnovel mcp` server) to convert and refine books deterministically without dumping raw book text into your context window.\n\n## 5-Stage CLI Feedback Loop\n\n1. **Ingest into a workspace directory**:\n   `editnovel ingest <files...> --workspace ./work --profile <en-light-novel|en-litrpg|en-fiction|es-editorial> --lang <auto|es|en> --json`\n   Inspect the returned `diagnostics` (`has_text_layer`, `chapters_without_title`, `discarded_images`, `uncertain_images`, `spell_clusters`).\n\n2. **Inspect and patch structure**:\n   `editnovel inspect sections --workspace ./work --json`\n   Only fetch minimal previews (`editnovel inspect section <id> --workspace ./work --head 10 --tail 10 --json`) when ambiguous.\n   Apply declarative patches (`editnovel structure patch --workspace ./work --merge s03,s04 --rename s02=\"Chapter 1\" --retype s01=prologue --reorder s01,s02,s03 --dry-run --json`).\n\n3. **Review media & accessibility**:\n   `editnovel inspect media --workspace ./work --filter discarded,uncertain --json`\n   Inspect thumbnail previews in `media/` on disk if uncertain, then approve/discard and attach `alt` text or mark decorative (`editnovel media update --workspace ./work --keep img_012 --discard img_013 --alt img_012=\"Cover illustration\" --decorative img_014 --dry-run --json`).\n\n4. **Audit deduplicated text, glossary & regex rules**:\n   `editnovel audit text --workspace ./work --min-conf 0.75 --limit 50 --json`\n   Protect proper nouns, rōmaji, and domain terms (`editnovel glossary ignore Rimuru Veldora --workspace ./work --apply-spell --min-conf 0.90 --json`).\n   Add deterministic regex transformations (`editnovel rules add --workspace ./work --find \"<pat>\" --replace \"<rep>\" --flags g --dry-run --json`).\n\n5. **Build & validate EPUB 3**:\n   `editnovel build --workspace ./work --out ./output/book.epub --export-project ./output/book.editnovel --json`\n   `editnovel verify ./output/book.epub --json`\n\n## MCP Tools (`editnovel mcp`)\n\n- `editnovel_ingest`\n- `editnovel_inspect_sections`\n- `editnovel_inspect_section`\n- `editnovel_patch_structure`\n- `editnovel_inspect_media`\n- `editnovel_update_media`\n- `editnovel_audit_text`\n- `editnovel_apply_rules`\n- `editnovel_build_epub`\n- `editnovel_verify_epub`",
+  "serverJson": {
+    "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+    "description": "Local-first Rust CLI and MCP server to convert PDFs and EPUBs into validated EPUB 3 and omnibus volumes with staged JSON feedback loops.",
+    "name": "io.github.editnovel/editnovel",
+    "packages": [
+      {
+        "identifier": "editnovel",
+        "registryType": "npm",
+        "transport": {
+          "type": "stdio"
+        },
+        "version": "0.1.0"
+      }
+    ],
+    "repository": {
+      "source": "github",
+      "url": "https://github.com/editnovel/editnovel"
+    },
+    "version": "0.1.0"
+  }
+}

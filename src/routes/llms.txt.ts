@@ -1,63 +1,99 @@
+import cliManifest from "~/generated/cli-manifest.json";
 import { getSiteUrl } from "~/lib/env";
+
+interface CliArg {
+  id: string;
+  long: string | null;
+  short: string | null;
+  required: boolean;
+  takesValue: boolean;
+  defaultValues: string[];
+}
+
+interface CliCommand {
+  path: string[];
+  name: string;
+  about: string | null;
+  args: CliArg[];
+  subcommands: CliCommand[];
+}
+
+function flattenCommands(commands: CliCommand[]): string[] {
+  const lines: string[] = [];
+  for (const cmd of commands) {
+    if (cmd.subcommands.length > 0) {
+      lines.push(...flattenCommands(cmd.subcommands));
+      continue;
+    }
+    const flags = cmd.args
+      .map((arg) => {
+        const flagName = arg.long ? `--${arg.long}` : `<${arg.id}>`;
+        if (arg.long && arg.takesValue) {
+          const def = arg.defaultValues[0] ? ` (default: ${arg.defaultValues[0]})` : "";
+          return `${flagName} <${arg.id}>${def}`;
+        }
+        return flagName;
+      })
+      .join(" ");
+    const suffix = flags.length > 0 ? ` ${flags}` : "";
+    lines.push(`- \`npx -y ${cliManifest.name} ${cmd.path.join(" ")}${suffix} --json\``);
+  }
+  return lines;
+}
 
 export function GET(): Response {
   const siteUrl = getSiteUrl();
-  const text = `# EditNovel
+  const mcpJson = JSON.stringify(cliManifest.mcpConfig, null, 2);
+  const profiles = cliManifest.supportedProfiles.map((p) => `\`${p}\``).join(", ");
+  const langs = cliManifest.supportedLangs.map((l) => `\`${l}\``).join(", ");
+  const commandLines = flattenCommands(cliManifest.commands as CliCommand[]).join("\n");
+  const mcpToolLines = cliManifest.mcpTools
+    .map((tool) => `- \`${tool.name}\`: ${tool.description}`)
+    .join("\n");
 
-> Agent-first local Rust CLI and MCP server to convert messy PDFs, EPUBs, and light novel or fiction manuscripts into clean, validated EPUB 3 and multi-volume omnibus editions.
+  const text = `# EditNovel (v${cliManifest.version})
 
-EditNovel runs 100% locally on your machine—zero cloud uploads, zero telemetry, and zero LLM rewriting of your prose. It is built for AI agents (Claude Code, Codex, Cursor, Claude Desktop, Gemini CLI, Antigravity) to execute a deterministic 5-stage feedback loop over structured JSON diagnostics instead of dumping entire books into the context window.
+> ${cliManifest.description}
+
+Repository: ${cliManifest.repository}
 
 ## Quick Start for AI Agents & Humans
 
 ### Zero-Install CLI
 \`\`\`bash
-npx -y editnovel --help
+npx -y ${cliManifest.name} --help
 \`\`\`
 
 ### Connect via MCP (\`stdio\`)
-Add EditNovel to your MCP client (\`claude_desktop_config.json\`, \`.cursor/mcp.json\`, etc.):
 \`\`\`json
-{
-  "mcpServers": {
-    "editnovel": {
-      "command": "npx",
-      "args": ["-y", "editnovel", "mcp"]
-    }
-  }
-}
+${mcpJson}
 \`\`\`
 
 ### Install the Agent Skill
 \`\`\`bash
-npx skills add editnovel/editnovel
+${cliManifest.skillsInstallCommand}
 \`\`\`
 
-## 5-Stage Agent Feedback Loop
+## Supported Profiles & Languages
 
-All CLI commands support \`--json\` for strict machine-readable output and \`--dry-run\` for safe previews.
+- Profiles: ${profiles}
+- Languages: ${langs}
 
-1. **Ingest sources into a structured workspace** (returns compact diagnostics, not raw book text):
-   \`npx -y editnovel ingest ./books/*.pdf --workspace ./work --profile en-light-novel --json\`
-   Supported profiles: \`en-light-novel\`, \`en-litrpg\`, \`en-fiction\`, \`es-editorial\`.
-2. **Inspect and patch logical structure** (chapters, parts, frontmatter):
-   \`npx -y editnovel inspect sections --workspace ./work --json\`
-   \`npx -y editnovel inspect section <id> --workspace ./work --head 10 --tail 10 --json\`
-   \`npx -y editnovel structure patch --workspace ./work --merge s03,s04 --rename s02="Chapter 1" --dry-run --json\`
-3. **Review media & accessibility** (perceptual \`dHash\` filtering of banners/watermarks, thumbnails, and \`alt\` text):
-   \`npx -y editnovel inspect media --workspace ./work --filter discarded,uncertain --json\`
-   \`npx -y editnovel media update --workspace ./work --keep img_012 --alt img_012="Cover illustration" --json\`
-4. **Audit deduplicated spelling & glossary clusters**:
-   \`npx -y editnovel audit text --workspace ./work --min-conf 0.75 --json\`
-   \`npx -y editnovel glossary ignore Rimuru Veldora --apply-spell --min-conf 0.90 --json\`
-5. **Build & verify EPUB 3** (plus optional \`.editnovel\` v2 ZIP project archive):
-   \`npx -y editnovel build --workspace ./work --out ./output/book.epub --export-project ./output/book.editnovel --json\`
-   \`npx -y editnovel verify ./output/book.epub --json\`
+## Generated CLI Commands
 
-## Portable \`.editnovel\` v2 Format & Optional Web Inspector
+${commandLines}
 
-- **\`.editnovel\` v2 Container:** Standard streaming ZIP archive (\`manifest.json\`, \`structure/tree.json\`, \`structure/chapters/*.xhtml\`, \`media/manifest.json\`, uncompressed \`media/\` binaries, \`rules/editorial.json\`, \`rules/spell_audit.json\`, optional \`ui/state.json\` and \`sources/\`).
-- **Web Portal (Optional Visual Inspector):** For visual human review, side-by-side PDF/e-reader inspection, or manual WYSIWYG tweaking of an exported \`.editnovel\` archive, visit [${siteUrl}/](${siteUrl}/) (with [Home](${siteUrl}/home), [Features](${siteUrl}/features), [FAQ](${siteUrl}/faq), and [About](${siteUrl}/about)).
+## Generated MCP Tools
+
+${mcpToolLines}
+
+## Canonical Agent Workflow (\`SKILL.md\`)
+
+${cliManifest.skillMarkdown}
+
+## Optional Visual Web Inspector
+
+- Web Portal: ${siteUrl}/ (with [Home](${siteUrl}/home), [Features](${siteUrl}/features), [FAQ](${siteUrl}/faq), and [About](${siteUrl}/about))
 `;
 
   return new Response(text, {

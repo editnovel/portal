@@ -4,12 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "bun --bun vite dev",
+    "prebuild": "bun run sync:cli",
     "build": "bun --bun vite build",
     "start": "bun run .output/server/index.mjs",
     "preview": "bun --bun vite preview",
     "test": "bun test",
     "check": "bunx biome check src tests && bunx tsc",
-    "audit:tokens": "bun run scripts/audit-tokens.ts"
+    "audit:tokens": "bun run scripts/audit-tokens.ts",
+    "sync:cli": "bun run scripts/sync-cli-manifest.ts"
   },
   "dependencies": {
     "@formkit/drag-and-drop": "^0.6.1",
