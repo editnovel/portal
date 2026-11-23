@@ -39,7 +39,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet src/generated/; then
+          if [ -n "$(git status --porcelain src/generated/ public/dicts/)" ]; then
             git add src/generated/ public/dicts/
             git commit -m "chore(portal): sync generated engine contracts and dicts"
             git push
