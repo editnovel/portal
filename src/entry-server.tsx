@@ -23,18 +23,19 @@ export default createHandler(() => {
       "WebAssembly EPUB Maker",
       "Online EPUB 3 Studio",
       "Editorial Light Novel Creator",
-      "EPUB Typesetting Studio"
+      "EPUB Typesetting Studio",
     ],
     url: siteUrl,
-    description: "Estudio editorial web y conversor de PDF a EPUB para novelas ligeras con tipografía avanzada, notas al pie interactivas y motor WebAssembly local 100% privado.",
+    description:
+      "Estudio editorial web y conversor de PDF a EPUB para novelas ligeras con tipografía avanzada, notas al pie interactivas y motor WebAssembly local 100% privado.",
     applicationCategory: "DesignApplication",
     operatingSystem: "All (Modern Web Browser)",
     browserRequirements: "Requires WebAssembly support",
     offers: {
       "@type": "Offer",
       price: "0",
-      priceCurrency: "USD"
-    }
+      priceCurrency: "USD",
+    },
   });
 
   return (
@@ -58,7 +59,13 @@ export default createHandler(() => {
               href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap"
               crossorigin="anonymous"
             />
-            <link rel="preload" href="/fonts/libron/Libron-Regular.ttf" as="font" type="font/ttf" crossorigin="anonymous" />
+            <link
+              rel="preload"
+              href="/fonts/libron/Libron-Regular.woff2"
+              as="font"
+              type="font/woff2"
+              crossorigin="anonymous"
+            />
             <script type="application/ld+json" innerHTML={schemaOrg} />
             <script
               innerHTML={`(function(){try{var t=localStorage.getItem("app_theme");var d=t==="dark"||((!t||t==="system")&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d){document.documentElement.classList.add("dark");document.documentElement.classList.remove("light");document.documentElement.style.colorScheme="dark";}else{document.documentElement.classList.remove("dark");document.documentElement.classList.add("light");document.documentElement.style.colorScheme="light";}}catch(e){}})()`}

@@ -1,24 +1,56 @@
-# EditNovel Studio
-> Estudio editorial web de código abierto, privado y conversor de PDF a EPUB 3 para novelas ligeras, manuscritos digitales y literatura serializada.
+# EditNovel
 
-EditNovel Studio es una plataforma web orientada a traductores, editores independientes y autores de novelas ligeras. Funciona 100% en el navegador del cliente mediante WebAssembly en Rust, Origin Private File System (OPFS), vectorización SIMD-128 y compresión nativa de streams, garantizando privacidad absoluta (zero-telemetry) y funcionamiento sin conexión.
+> Agent-first local Rust CLI and MCP server to convert messy PDFs, EPUBs, and light novel or fiction manuscripts into clean, validated EPUB 3 and multi-volume omnibus editions.
 
-## Enlaces Principales
-- [Editor Studio](/): Interfaz de edición WYSIWYG, maquetación, visor sincronizado de PDF y vista previa de e-reader.
-- [Portal Informativo](/home): Resumen del proyecto, propuesta de valor y características destacadas.
-- [Características y Módulos](/features): Desglose técnico de la arquitectura, tipografía, motor y almacenamiento.
-- [Preguntas Frecuentes (FAQ)](/faq): Respuestas sobre privacidad, límites de tamaño, formatos compatibles y lectores de tinta electrónica.
-- [Acerca del Proyecto](/about): Filosofía de diseño, arquitectura local y tecnologías empleadas.
+EditNovel runs 100% locally on your machine—zero cloud uploads, zero telemetry, and zero LLM rewriting of your prose. It is built for AI agents (Claude Code, Codex, Cursor, Claude Desktop, Gemini CLI, Antigravity) to execute a deterministic 5-stage feedback loop over structured JSON diagnostics instead of dumping entire books into the context window.
 
-## Capacidades Técnicas y Arquitectura
-- Motor WebAssembly en Rust: Extracción y parsing de PDFs y EPUBs, clasificación de imágenes, limpieza de HTML y generación de EPUB 3 estándar con cumplimiento riguroso de especificaciones W3C.
-- Aceleración por Hardware:
-  - Vectorización SIMD-128 en WebAssembly para acelerar la tokenización de texto y análisis ortográfico masivo.
-  - Almacenamiento en disco de latencia ultrabaja mediante OPFS (Origin Private File System), soportando proyectos masivos de cientos de megabytes sin restricciones de memoria RAM.
-  - Decodificación acelerada por hardware mediante Web Codecs API (ImageDecoder) para portadas e ilustraciones.
-  - Renderizado de PDF desacoplado del hilo principal mediante OffscreenCanvas con transferencias GPU zero-copy.
-  - Compresión y descompresión de proyectos mediante Compression Streams API nativa del navegador.
-- Editor TipTap WYSIWYG: Soporte para formato de novela ligera, citas interactivas, notas al pie con popover flotante, letras capitulares (drop caps) y reglas tipográficas avanzadas.
-- Reglas Editoriales y Sustituciones: Transformaciones automáticas de comillas, rayas de diálogo (em-dash), saltos de escena y glosario de términos.
-- Auditoría Ortográfica Híbrida: Detección ortográfica inteligente respetando nombres propios, términos extranjeros y vocabulario japonés romanizado (rōmaji).
-- Exportación EPUB 3 Válida: Paquetes optimizados para Apple Books, Kobo, Kindle, Calibre y lectores de tinta electrónica (e-Ink).
+## Quick Start for AI Agents & Humans
+
+### Zero-Install CLI
+```bash
+npx -y editnovel --help
+```
+
+### Connect via MCP (`stdio`)
+Add EditNovel to your MCP client (`claude_desktop_config.json`, `.cursor/mcp.json`, etc.):
+```json
+{
+  "mcpServers": {
+    "editnovel": {
+      "command": "npx",
+      "args": ["-y", "editnovel", "mcp"]
+    }
+  }
+}
+```
+
+### Install the Agent Skill
+```bash
+npx skills add editnovel/editnovel
+```
+
+## 5-Stage Agent Feedback Loop
+
+All CLI commands support `--json` for strict machine-readable output and `--dry-run` for safe previews.
+
+1. **Ingest sources into a structured workspace** (returns compact diagnostics, not raw book text):
+   `npx -y editnovel ingest ./books/*.pdf --workspace ./work --profile en-light-novel --json`
+   Supported profiles: `en-light-novel`, `en-litrpg`, `en-fiction`, `es-editorial`.
+2. **Inspect and patch logical structure** (chapters, parts, frontmatter):
+   `npx -y editnovel inspect sections --workspace ./work --json`
+   `npx -y editnovel inspect section <id> --workspace ./work --head 10 --tail 10 --json`
+   `npx -y editnovel structure patch --workspace ./work --merge s03,s04 --rename s02="Chapter 1" --dry-run --json`
+3. **Review media & accessibility** (perceptual `dHash` filtering of banners/watermarks, thumbnails, and `alt` text):
+   `npx -y editnovel inspect media --workspace ./work --filter discarded,uncertain --json`
+   `npx -y editnovel media update --workspace ./work --keep img_012 --alt img_012="Cover illustration" --json`
+4. **Audit deduplicated spelling & glossary clusters**:
+   `npx -y editnovel audit text --workspace ./work --min-conf 0.75 --json`
+   `npx -y editnovel glossary ignore Rimuru Veldora --apply-spell --min-conf 0.90 --json`
+5. **Build & verify EPUB 3** (plus optional `.editnovel` v2 ZIP project archive):
+   `npx -y editnovel build --workspace ./work --out ./output/book.epub --export-project ./output/book.editnovel --json`
+   `npx -y editnovel verify ./output/book.epub --json`
+
+## Portable `.editnovel` v2 Format & Optional Web Inspector
+
+- **`.editnovel` v2 Container:** Standard streaming ZIP archive (`manifest.json`, `structure/tree.json`, `structure/chapters/*.xhtml`, `media/manifest.json`, uncompressed `media/` binaries, `rules/editorial.json`, `rules/spell_audit.json`, optional `ui/state.json` and `sources/`).
+- **Web Portal (Optional Visual Inspector):** For visual human review, side-by-side PDF/e-reader inspection, or manual WYSIWYG tweaking of an exported `.editnovel` archive, open the local-first browser portal at `/` (with `/home`, `/features`, `/faq`, and `/about` documentation).
