@@ -1,0 +1,481 @@
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap");
+
+@font-face {
+  font-family: "Libron";
+  src: url("/fonts/libron/Libron-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Libron";
+  src: url("/fonts/libron/Libron-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Libron";
+  src: url("/fonts/libron/Libron-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --reader-font: "Libron", "Literata", Georgia, serif;
+  --reader-font-size: 18px;
+  --reader-line-height: 1.75;
+  --reader-max-width: 44rem;
+  --reader-text-align: justify;
+  --reader-hyphens: auto;
+  --reader-hanging-punctuation: first last;
+  --reader-bg: #ffffff;
+  --reader-text: #0a0a0a;
+  --reader-muted: #525252;
+  --reader-border: #e5e5e5;
+  --reader-card-bg: #f5f5f5;
+}
+
+:root[data-theme="dark"] {
+  --reader-bg: #0a0a0a;
+  --reader-text: #ededed;
+  --reader-muted: #a3a3a3;
+  --reader-border: #262626;
+  --reader-card-bg: #141414;
+}
+
+:root[data-theme="sepia"] {
+  --reader-bg: #fbf0d9;
+  --reader-text: #433422;
+  --reader-muted: #78654e;
+  --reader-border: #ebd9b8;
+  --reader-card-bg: #f4e5c8;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--reader-bg);
+  color: var(--reader-text);
+  font-family: var(--reader-font);
+  font-size: var(--reader-font-size);
+  line-height: var(--reader-line-height);
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+}
+
+.reader-container,
+.novel-container {
+  box-sizing: border-box;
+  max-width: var(--reader-max-width, 44rem);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 3rem var(--reader-padding-x, 2rem) 6rem;
+  text-align: var(--reader-text-align);
+  hyphens: var(--reader-hyphens);
+  hanging-punctuation: var(--reader-hanging-punctuation);
+  overflow-wrap: break-word;
+}
+
+strong,
+b {
+  font-weight: 700;
+}
+
+s,
+del {
+  text-decoration: line-through;
+}
+
+u {
+  text-decoration: underline;
+  text-underline-position: under;
+}
+
+mark.reader-search-match {
+  background-color: rgba(250, 204, 21, 0.4) !important;
+  color: inherit !important;
+  border-radius: 2px;
+}
+
+mark.reader-search-match-current {
+  background-color: #facc15 !important;
+  color: #000000 !important;
+  outline: 2px solid #ca8a04 !important;
+  border-radius: 2px;
+}
+
+img,
+.novel-container img,
+.reader-body img,
+.inline-image img,
+.full-illustration-wrap img {
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+  margin: calc(1.5 * var(--reader-font-size, 18px)) auto !important;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  object-fit: contain;
+}
+
+h1.chapter-title,
+h1 {
+  font-size: calc(1.85 * var(--reader-font-size, 18px));
+  line-height: 1.3;
+  font-weight: 700;
+  margin-top: calc(1.5 * var(--reader-font-size, 18px));
+  margin-bottom: calc(2 * var(--reader-font-size, 18px));
+  text-indent: 0;
+  letter-spacing: -0.01em;
+}
+
+h1:not([style*="text-align"]),
+h1.chapter-title:not([style*="text-align"]) {
+  text-align: center;
+}
+
+h2.chapter-subtitle,
+h2.section-title,
+h2 {
+  font-size: calc(1.4 * var(--reader-font-size, 18px));
+  line-height: 1.4;
+  font-weight: 600;
+  margin-top: calc(2 * var(--reader-font-size, 18px));
+  margin-bottom: calc(2 * var(--reader-font-size, 18px));
+  text-indent: 0;
+}
+
+h2:not([style*="text-align"]),
+h2.chapter-subtitle:not([style*="text-align"]),
+h2.section-title:not([style*="text-align"]) {
+  text-align: center;
+}
+
+h3.part-heading,
+h3 {
+  font-size: calc(1.2 * var(--reader-font-size, 18px));
+  line-height: 1.4;
+  font-weight: 600;
+  margin-top: calc(2 * var(--reader-font-size, 18px));
+  margin-bottom: calc(1.25 * var(--reader-font-size, 18px));
+  text-indent: 0;
+}
+
+h3:not([style*="text-align"]),
+h3.part-heading:not([style*="text-align"]) {
+  text-align: center;
+}
+
+p {
+  margin-top: 0;
+  margin-bottom: 0;
+  text-indent: 1.6em;
+  clear: both;
+}
+
+p.drop-cap,
+p.first-paragraph.drop-cap {
+  text-indent: 0 !important;
+}
+
+p.drop-cap::first-letter,
+p.first-paragraph.drop-cap::first-letter {
+  float: left;
+  font-size: calc(3.2 * var(--reader-font-size, 18px));
+  line-height: 0.82;
+  margin-right: calc(0.12 * var(--reader-font-size, 18px));
+  font-weight: 700;
+  color: var(--reader-text);
+}
+
+p.dialogue {
+  text-indent: 1.6em;
+  margin-bottom: 0;
+}
+
+p.thought {
+  font-style: italic;
+  text-indent: 1.6em;
+}
+
+p.first-paragraph,
+h1 + p,
+h2 + p,
+h3 + p,
+.scene-break + p,
+hr + p,
+figure + p,
+div.scene-break + p,
+div.inline-image + p,
+div.full-illustration-wrap + p,
+blockquote + p,
+aside.footnote-card + p {
+  text-indent: 0;
+}
+
+p.center {
+  text-align: center;
+  text-indent: 0;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+blockquote {
+  margin: calc(1.5 * var(--reader-font-size, 18px)) 0;
+  padding-left: calc(1.25 * var(--reader-font-size, 18px));
+  border-left: 3px solid var(--reader-muted);
+  font-style: italic;
+  font-size: calc(0.92 * var(--reader-font-size, 18px));
+  line-height: 1.6;
+  text-indent: 0;
+  color: var(--reader-text);
+  opacity: 0.9;
+}
+
+p.bracket-dialogue {
+  text-indent: 0;
+  font-style: italic;
+  margin: 0.85em 0;
+  padding-left: 0.85em;
+  border-left: 2.5px solid var(--reader-muted);
+  color: var(--reader-text);
+  line-height: var(--reader-line-height, 1.75);
+}
+
+p.bracket-dialogue + p.bracket-dialogue {
+  margin-top: 0.25em;
+}
+
+.scene-break {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: calc(2.25 * var(--reader-font-size, 18px)) 0;
+  text-align: center;
+  text-indent: 0;
+  font-size: calc(1.1 * var(--reader-font-size, 18px));
+  letter-spacing: 0.35em;
+  color: var(--reader-muted);
+  user-select: none;
+}
+
+hr {
+  margin: calc(2.25 * var(--reader-font-size, 18px)) 0;
+  border: 0;
+  text-align: center;
+  position: relative;
+}
+
+hr::after {
+  content: "◆ ◇ ◆ ◇ ◆";
+  letter-spacing: 0.35em;
+  color: var(--reader-muted);
+  font-size: calc(1.1 * var(--reader-font-size, 18px));
+  display: block;
+  text-align: center;
+}
+
+aside.footnote-card {
+  display: block;
+  margin: calc(1.75 * var(--reader-font-size, 18px)) 0;
+  padding: calc(0.85 * var(--reader-font-size, 18px)) calc(1.15 * var(--reader-font-size, 18px));
+  background-color: var(--reader-card-bg);
+  border: 1px solid var(--reader-border);
+  border-left: 3.5px solid var(--reader-muted);
+  border-radius: 0.5rem;
+  font-size: calc(0.92 * var(--reader-font-size, 18px));
+  line-height: 1.6;
+  text-indent: 0;
+  color: var(--reader-text);
+  transition: all 0.2s ease;
+}
+
+aside.footnote-card strong,
+aside.footnote-card .footnote-card-tag,
+aside.footnote-card p.footnote-card-tag {
+  display: block;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: calc(0.72 * var(--reader-font-size, 18px));
+  letter-spacing: 0.08em;
+  color: var(--reader-muted);
+  margin-bottom: calc(0.25 * var(--reader-font-size, 18px));
+  text-indent: 0;
+}
+
+aside.footnote-card .footnote-card-body,
+aside.footnote-card p.footnote-card-body,
+aside.footnote-card p {
+  text-indent: 0;
+  margin: 0;
+  font-size: calc(0.92 * var(--reader-font-size, 18px));
+  line-height: 1.6;
+}
+
+a.noteref {
+  text-decoration: none;
+  color: var(--reader-muted);
+  font-weight: 600;
+  vertical-align: super;
+  font-size: 0.78em;
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+a.noteref:hover {
+  background-color: var(--reader-card-bg);
+  color: var(--reader-text);
+}
+
+.noteref-highlighted {
+  outline: 2px solid var(--reader-muted) !important;
+  background-color: var(--reader-card-bg) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 8px var(--reader-border) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.reader-footnote-tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  transform: translateX(-50%);
+  background-color: var(--reader-card-bg, #222);
+  color: var(--reader-text, #fff);
+  border: 1px solid var(--reader-border, #444);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  max-width: 22rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  backdrop-filter: blur(8px);
+}
+
+.reader-footnote-tooltip .tooltip-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--reader-muted);
+  margin-bottom: 0.25rem;
+}
+
+sub {
+  vertical-align: sub;
+  font-size: 0.75em;
+}
+
+sup {
+  vertical-align: super;
+  font-size: 0.75em;
+}
+
+ul, ol {
+  margin: calc(1 * var(--reader-font-size, 18px)) 0;
+  padding-left: calc(2 * var(--reader-font-size, 18px));
+  text-indent: 0;
+}
+
+ul {
+  list-style-type: disc;
+}
+
+ol {
+  list-style-type: decimal;
+}
+
+li {
+  margin-bottom: calc(0.25 * var(--reader-font-size, 18px));
+  text-indent: 0;
+}
+
+li p {
+  text-indent: 0;
+}
+
+div.verse-block {
+  margin: calc(1.5 * var(--reader-font-size, 18px)) 0;
+  padding-left: calc(2 * var(--reader-font-size, 18px));
+  font-style: italic;
+}
+
+p.verse-line {
+  text-indent: 0;
+  margin: calc(0.15 * var(--reader-font-size, 18px)) 0;
+}
+
+figure.book-illustration {
+  margin: calc(2 * var(--reader-font-size, 18px)) 0;
+  text-align: center;
+  text-indent: 0;
+}
+
+figure.book-illustration img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+figure.book-illustration figcaption {
+  margin-top: calc(0.5 * var(--reader-font-size, 18px));
+  font-size: calc(0.85 * var(--reader-font-size, 18px));
+  color: var(--reader-muted);
+  font-style: italic;
+}
+
+section.chapter-footnotes {
+  margin-top: calc(3 * var(--reader-font-size, 18px));
+  padding-top: calc(1.5 * var(--reader-font-size, 18px));
+  border-top: 1px solid var(--reader-border);
+  font-size: calc(0.88 * var(--reader-font-size, 18px));
+  line-height: 1.55;
+}
+
+h4.footnotes-heading {
+  font-size: calc(0.95 * var(--reader-font-size, 18px));
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 calc(1 * var(--reader-font-size, 18px)) 0;
+  color: var(--reader-muted);
+}
+
+aside.footnote {
+  margin-bottom: calc(0.8 * var(--reader-font-size, 18px));
+}
+
+aside.footnote p {
+  text-indent: 0;
+  margin: 0;
+  text-align: left;
+}
+
+a.footnote-backref {
+  text-decoration: none;
+  font-weight: bold;
+  color: inherit;
+  margin-right: 0.4em;
+}
+
+.highlight-pulse {
+  animation: pulse-glow 1s ease-out;
+}
+
+@keyframes pulse-glow {
+  0% {
+    background-color: rgba(234, 179, 8, 0.4);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
