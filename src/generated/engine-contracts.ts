@@ -121,14 +121,7 @@ export interface EditNovelV2Manifest<TMetadata = EngineBookMetadataContract> {
 }
 
 export interface EditNovelV2TreeSection<
-  TSectionType extends string =
-    | "prologue"
-    | "chapter"
-    | "interlude"
-    | "epilogue"
-    | "afterword"
-    | "cover"
-    | "color",
+  TSectionType extends string = "prologue" | "chapter" | "interlude" | "epilogue" | "afterword" | "cover" | "color",
 > {
   id: string;
   fileId: string;
@@ -142,14 +135,7 @@ export interface EditNovelV2TreeSection<
 }
 
 export interface EditNovelV2TreeGroup<
-  TSectionType extends string =
-    | "prologue"
-    | "chapter"
-    | "interlude"
-    | "epilogue"
-    | "afterword"
-    | "cover"
-    | "color",
+  TSectionType extends string = "prologue" | "chapter" | "interlude" | "epilogue" | "afterword" | "cover" | "color",
 > {
   fileId: string;
   fileName: string;
@@ -158,14 +144,7 @@ export interface EditNovelV2TreeGroup<
 }
 
 export interface EditNovelV2Tree<
-  TSectionType extends string =
-    | "prologue"
-    | "chapter"
-    | "interlude"
-    | "epilogue"
-    | "afterword"
-    | "cover"
-    | "color",
+  TSectionType extends string = "prologue" | "chapter" | "interlude" | "epilogue" | "afterword" | "cover" | "color",
 > {
   groups: EditNovelV2TreeGroup<TSectionType>[];
 }
@@ -209,166 +188,174 @@ export interface EditNovelV2EditorialRules {
 }
 
 export const ENGINE_MANIFEST: EngineManifestContract = {
-  schemaVersion: 1,
-  engineVersion: "0.1.0",
-  archiveFormat: "editnovel",
-  archiveSchemaVersion: 2,
-  presets: [
+  "schemaVersion": 1,
+  "engineVersion": "0.1.0",
+  "archiveFormat": "editnovel",
+  "archiveSchemaVersion": 2,
+  "presets": [
     {
-      id: "visual-novel",
-      aliases: ["en-light-novel", "es-editorial", "light-novel"],
-      profile: {
-        id: "visual-novel",
-        enableDropCaps: true,
-        enableLitRpgBrackets: true,
-        enableSceneBreaks: true,
-        footnoteStyle: "end_of_chapter",
-        fullPageIllustrations: true,
-      },
+      "id": "visual-novel",
+      "aliases": [
+        "en-light-novel",
+        "es-editorial",
+        "light-novel"
+      ],
+      "profile": {
+        "id": "visual-novel",
+        "enableDropCaps": true,
+        "enableLitRpgBrackets": true,
+        "enableSceneBreaks": true,
+        "footnoteStyle": "end_of_chapter",
+        "fullPageIllustrations": true
+      }
     },
     {
-      id: "generic",
-      aliases: ["en-fiction", "fiction"],
-      profile: {
-        id: "generic",
-        enableDropCaps: true,
-        enableLitRpgBrackets: false,
-        enableSceneBreaks: true,
-        footnoteStyle: "end_of_chapter",
-        fullPageIllustrations: false,
-      },
+      "id": "generic",
+      "aliases": [
+        "en-fiction",
+        "fiction"
+      ],
+      "profile": {
+        "id": "generic",
+        "enableDropCaps": true,
+        "enableLitRpgBrackets": false,
+        "enableSceneBreaks": true,
+        "footnoteStyle": "end_of_chapter",
+        "fullPageIllustrations": false
+      }
     },
     {
-      id: "webnovel",
-      aliases: ["en-litrpg", "litrpg"],
-      profile: {
-        id: "webnovel",
-        enableDropCaps: false,
-        enableLitRpgBrackets: true,
-        enableSceneBreaks: true,
-        footnoteStyle: "callout_card",
-        fullPageIllustrations: true,
-      },
+      "id": "webnovel",
+      "aliases": [
+        "en-litrpg",
+        "litrpg"
+      ],
+      "profile": {
+        "id": "webnovel",
+        "enableDropCaps": false,
+        "enableLitRpgBrackets": true,
+        "enableSceneBreaks": true,
+        "footnoteStyle": "callout_card",
+        "fullPageIllustrations": true
+      }
     },
     {
-      id: "readme",
-      aliases: [],
-      profile: {
-        id: "readme",
-        enableDropCaps: false,
-        enableLitRpgBrackets: false,
-        enableSceneBreaks: true,
-        footnoteStyle: "end_of_chapter",
-        fullPageIllustrations: false,
-      },
+      "id": "readme",
+      "aliases": [],
+      "profile": {
+        "id": "readme",
+        "enableDropCaps": false,
+        "enableLitRpgBrackets": false,
+        "enableSceneBreaks": true,
+        "footnoteStyle": "end_of_chapter",
+        "fullPageIllustrations": false
+      }
     },
     {
-      id: "paper",
-      aliases: [],
-      profile: {
-        id: "paper",
-        enableDropCaps: false,
-        enableLitRpgBrackets: false,
-        enableSceneBreaks: false,
-        footnoteStyle: "end_of_chapter",
-        fullPageIllustrations: false,
-      },
-    },
+      "id": "paper",
+      "aliases": [],
+      "profile": {
+        "id": "paper",
+        "enableDropCaps": false,
+        "enableLitRpgBrackets": false,
+        "enableSceneBreaks": false,
+        "footnoteStyle": "end_of_chapter",
+        "fullPageIllustrations": false
+      }
+    }
   ],
-  presetAliases: {
+  "presetAliases": {
     "en-fiction": "generic",
     "en-light-novel": "visual-novel",
     "en-litrpg": "webnovel",
     "es-editorial": "visual-novel",
-    fiction: "generic",
-    generic: "generic",
+    "fiction": "generic",
+    "generic": "generic",
     "light-novel": "visual-novel",
-    litrpg: "webnovel",
-    paper: "paper",
-    readme: "readme",
+    "litrpg": "webnovel",
+    "paper": "paper",
+    "readme": "readme",
     "visual-novel": "visual-novel",
-    webnovel: "webnovel",
+    "webnovel": "webnovel"
   },
-  languages: [
+  "languages": [
     {
-      code: "auto",
-      labels: {
-        es: "Automático",
-        en: "Auto",
-      },
+      "code": "auto",
+      "labels": {
+        "es": "Automático",
+        "en": "Auto"
+      }
     },
     {
-      code: "es",
-      labels: {
-        es: "Español",
-        en: "Spanish",
-      },
+      "code": "es",
+      "labels": {
+        "es": "Español",
+        "en": "Spanish"
+      }
     },
     {
-      code: "en",
-      labels: {
-        es: "Inglés",
-        en: "English",
-      },
-    },
+      "code": "en",
+      "labels": {
+        "es": "Inglés",
+        "en": "English"
+      }
+    }
   ],
-  dictionaries: [
+  "dictionaries": [
     {
-      lang: "es",
-      cacheName: "es_frequency.txt",
-      brFileName: "es_frequency.txt.br",
-      url: "/dicts/es_frequency.txt.br",
+      "lang": "es",
+      "cacheName": "es_frequency.txt",
+      "brFileName": "es_frequency.txt.br",
+      "url": "/dicts/es_frequency.txt.br"
     },
     {
-      lang: "en",
-      cacheName: "en_frequency.txt",
-      brFileName: "en_frequency.txt.br",
-      url: "/dicts/en_frequency.txt.br",
+      "lang": "en",
+      "cacheName": "en_frequency.txt",
+      "brFileName": "en_frequency.txt.br",
+      "url": "/dicts/en_frequency.txt.br"
     },
     {
-      lang: "ja",
-      cacheName: "ja_romaji_common.tsv",
-      brFileName: "ja_romaji_common.tsv.br",
-      url: "/dicts/ja_romaji_common.tsv.br",
-    },
+      "lang": "ja",
+      "cacheName": "ja_romaji_common.tsv",
+      "brFileName": "ja_romaji_common.tsv.br",
+      "url": "/dicts/ja_romaji_common.tsv.br"
+    }
   ],
-  defaultEditorialRules: [
+  "defaultEditorialRules": [
     {
-      id: "rule-dialogue-dashes",
-      label: "Standardize Dialogue Em-Dashes",
-      description:
-        "Replaces double hyphens and standard dashes in spoken lines with typographic em-dashes (—).",
-      enabled: true,
-      affectedCount: 0,
+      "id": "rule-dialogue-dashes",
+      "label": "Standardize Dialogue Em-Dashes",
+      "description": "Replaces double hyphens and standard dashes in spoken lines with typographic em-dashes (—).",
+      "enabled": true,
+      "affectedCount": 0
     },
     {
-      id: "rule-curly-quotes",
-      label: "Smart Curly Quotes & Brackets",
-      description:
-        "Transforms straight quotation marks and angle brackets into curved or guillemet quotes (« » / “ ”).",
-      enabled: true,
-      affectedCount: 0,
+      "id": "rule-curly-quotes",
+      "label": "Smart Curly Quotes & Brackets",
+      "description": "Transforms straight quotation marks and angle brackets into curved or guillemet quotes (« » / “ ”).",
+      "enabled": true,
+      "affectedCount": 0
     },
     {
-      id: "rule-ellipsis",
-      label: "Typographic Ellipses",
-      description: "Substitutes three dots (...) with a single horizontal ellipsis glyph (…).",
-      enabled: true,
-      affectedCount: 0,
+      "id": "rule-ellipsis",
+      "label": "Typographic Ellipses",
+      "description": "Substitutes three dots (...) with a single horizontal ellipsis glyph (…).",
+      "enabled": true,
+      "affectedCount": 0
     },
     {
-      id: "rule-clean-breaks",
-      label: "Consolidate Multiple Blank Lines & Breaks",
-      description: "Removes unnecessary blank lines and preserves deliberate scene transitions.",
-      enabled: true,
-      affectedCount: 0,
+      "id": "rule-clean-breaks",
+      "label": "Consolidate Multiple Blank Lines & Breaks",
+      "description": "Removes unnecessary blank lines and preserves deliberate scene transitions.",
+      "enabled": true,
+      "affectedCount": 0
     },
     {
-      id: "rule-strip-headers",
-      label: "Strip Running Headers, Page Numbers & OCR Fixes",
-      description: "Strips repeated PDF page markers and applies contextual spell/OCR corrections.",
-      enabled: true,
-      affectedCount: 0,
-    },
-  ],
+      "id": "rule-strip-headers",
+      "label": "Strip Running Headers, Page Numbers & OCR Fixes",
+      "description": "Strips repeated PDF page markers and applies contextual spell/OCR corrections.",
+      "enabled": true,
+      "affectedCount": 0
+    }
+  ]
 };
